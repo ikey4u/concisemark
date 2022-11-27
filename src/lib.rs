@@ -1,20 +1,21 @@
-mod meta;
-mod token;
-mod node;
+pub mod meta;
+pub mod node;
+pub mod token;
 
-use node::Node;
 use meta::Meta;
-
+use node::Node;
 use token::{Token, Tokenizer, Paragraph, Subtitle, List, Codeblock, Mark, Pair, Link};
-use anyhow::Result;
 
-pub trait Plugin {
-    fn run(&self) -> Result<String>;
-    fn name(&self) -> &'static str;
-    fn marks(&self) -> Vec<&'static str>;
+/// A draft plugin interface
+trait Plugin {
+    // if plugin is interested in node with this tag, hit should return true
+    fn hit(&self, tag: &str) -> bool;
+    // transform AST node `node` which contains `content` into a modified AST node
+    fn transform(&self, node: Node<String>, content: &str) -> Option<Node<String>>;
+    // render AST node `node` to plugin wanted string
+    fn render(&self, node: Node<String>) -> Option<String>;
 }
 
-#[derive(Debug)]
 pub struct Page {
     pub meta: Option<Meta>,
     pub ast: Node<String>,
@@ -34,11 +35,18 @@ pub struct Parser {
 }
 
 impl Parser {
+    /// Create a ConciseMarkdown parser from content
     pub fn new<B: AsRef<str>>(content: B) -> Self {
         Self::new_with_plugins(content, vec![])
     }
 
-    pub fn new_with_plugins<B: AsRef<str>>(content: B, plugins: Vec<Box<dyn Plugin>>) -> Self {
+    /// Consume current paser and generate a parsed page
+    pub fn parse(self) -> Page {
+        let ast = self.parse_document("div", 0, self.content.len(), 0);
+        Page { meta: self.meta, ast, content: self.content }
+    }
+
+    fn new_with_plugins<B: AsRef<str>>(content: B, plugins: Vec<Box<dyn Plugin>>) -> Self {
         let meta = Meta::new(content.as_ref());
         let mut content = if let Some(ref meta) = meta {
             content.as_ref()[meta.size..].to_owned()
@@ -58,12 +66,7 @@ impl Parser {
         }
     }
 
-    pub fn parse(&self) -> Page {
-        let ast = self.parse_document("div", 0, self.content.len(), 0);
-        Page { meta: self.meta.clone(), ast, content: self.content.to_string() }
-    }
-
-    pub fn parse_document<S: AsRef<str>>(&self, root: S, pbase: usize, length: usize, indent: usize) -> Node<String> {
+    fn parse_document<S: AsRef<str>>(&self, root: S, pbase: usize, length: usize, indent: usize) -> Node<String> {
         let root = Node::new(root.as_ref().to_owned(), pbase..(pbase + length));
         let tokenizer = Tokenizer::new(&self.content[pbase..(pbase + length)], indent);
         let mut pbase = pbase;
@@ -94,7 +97,7 @@ impl Parser {
         root
     }
 
-    pub fn parse_statements<S: AsRef<str>>(&self, pbase: usize, text: S) -> Vec<Node<String>> {
+    fn parse_statements<S: AsRef<str>>(&self, pbase: usize, text: S) -> Vec<Node<String>> {
         let mut cursor = pbase;
         let text = text.as_ref();
         let mut nodes = vec![];
@@ -106,7 +109,7 @@ impl Parser {
         nodes
     }
 
-    pub fn parse_statement<S: AsRef<str>>(&self, pbase: usize, text: S) -> Node<String> {
+    fn parse_statement<S: AsRef<str>>(&self, pbase: usize, text: S) -> Node<String> {
         let text = text.as_ref();
 
         let chars: Vec<char> = text.chars().collect();
@@ -167,7 +170,7 @@ impl Parser {
         return Node::new("text".to_owned(), pbase..(pbase + peeked_text.len()));
     }
 
-    pub fn parse_paragraph(&self, pbase: usize, paragaph: Paragraph) -> Node<String> {
+    fn parse_paragraph(&self, pbase: usize, paragaph: Paragraph) -> Node<String> {
         let node = Node::new("p".to_owned(), pbase..(pbase + paragaph.prop.val.len()));
         let text = paragaph.prop.val.as_str();
         for subnode in self.parse_statements(pbase, text) {
@@ -176,7 +179,7 @@ impl Parser {
         node
     }
 
-    pub fn parse_subtitle(&self, pbase: usize, subtitle: Subtitle) -> Node<String> {
+    fn parse_subtitle(&self, pbase: usize, subtitle: Subtitle) -> Node<String> {
         let value = subtitle.prop.val.as_str();
         let headdeep = value.chars().take_while(|&c| c == '#').count();
         let headtag = match headdeep {
@@ -192,7 +195,7 @@ impl Parser {
         node
     }
 
-    pub fn parse_list(&self, pbase: usize, list: List) -> Node<String> {
+    fn parse_list(&self, pbase: usize, list: List) -> Node<String> {
         let node = Node::new("ul".to_owned(), pbase..(pbase + list.prop.val.len()));
         for item in list.iter() {
             let list_node = Node::new("li".to_owned(), (pbase + item.head.start)..(pbase + item.body.end));
@@ -215,7 +218,7 @@ impl Parser {
         node
     }
 
-    pub fn parse_codeblock(&self, pbase: usize, codeblock: Codeblock) -> Node<String> {
+    fn parse_codeblock(&self, pbase: usize, codeblock: Codeblock) -> Node<String> {
         Node::new("codeblock".to_owned(), pbase..(pbase + codeblock.prop.val.len()))
     }
 }
