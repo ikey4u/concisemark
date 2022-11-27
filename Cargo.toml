@@ -9,7 +9,7 @@ documentation = "https://github.com/ikey4u/concisemark"
 repository = "https://github.com/ikey4u/concisemark"
 license = "MIT"
 readme = "README.md"
-categories = ["markdown"]
+categories = ["parsing", "parser-implementations", "rendering"]
 keywords = ["parser", "markdown"]
 
 [dependencies]
