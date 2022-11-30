@@ -227,19 +227,31 @@ impl Parser {
 mod tests {
     use crate::*;
 
-    #[test]
-    fn test_render() {
+    fn init_logger() {
         tracing_subscriber::fmt().event_format(
             tracing_subscriber::fmt::format()
                 .with_file(true)
                 .with_line_number(true)
         ).init();
+    }
 
-        let content = "# Title";
-        let parser = Parser::new(content);
-        let page = parser.parse();
-        let ast = page.ast.data.borrow();
-        assert_eq!(ast.tag, "div");
-        assert_eq!(ast.children[0].borrow().tag, "h1");
+    #[test]
+    fn test_subtitle() {
+        init_logger();
+        let tcases = [
+            ("# title", "h1"),
+            ("## title", "h2"),
+            ("### title", "h3"),
+            ("#### title", "h3"),
+            ("##### title", "h3"),
+            ("###### title", "h3"),
+            ("####### title", "h3"),
+        ];
+        for (content, tag) in tcases {
+            let page = Parser::new(content).parse();
+            let ast = page.ast.data.borrow();
+            assert_eq!(ast.tag, "div");
+            assert_eq!(ast.children[0].borrow().tag, tag);
+        }
     }
 }

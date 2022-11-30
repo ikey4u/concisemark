@@ -59,7 +59,7 @@ impl<T: Display + AsRef<str>> NodeData<T> {
             "text" => {
                 return bodystr.to_owned();
             }
-            "div" | "p" | "li" | "ul" | "h1" | "h2" => {
+            "div" | "p" | "li" | "ul" | "h1" | "h2" | "h3" => {
                 (format!("<{}>", self.tag.as_ref()), format!("</{}>", self.tag.as_ref()))
             }
             "listhead" | "listbody" => {
