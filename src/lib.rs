@@ -3,18 +3,10 @@ pub mod node;
 pub mod token;
 
 use meta::Meta;
-use node::Node;
+use node::{AstNode, Node};
 use token::{Token, Tokenizer, Paragraph, Subtitle, List, Codeblock, Mark, Pair, Link};
 
-/// A draft plugin interface
-trait Plugin {
-    // if plugin is interested in node with this tag, hit should return true
-    fn hit(&self, tag: &str) -> bool;
-    // transform AST node `node` which contains `content` into a modified AST node
-    fn transform(&self, node: Node<String>, content: &str) -> Option<Node<String>>;
-    // render AST node `node` to plugin wanted string
-    fn render(&self, node: Node<String>) -> Option<String>;
-}
+// type HookFn = dyn Fn(&AstNode) -> Option<String>;
 
 pub struct Page {
     pub meta: Option<Meta>,
@@ -23,21 +15,23 @@ pub struct Page {
 }
 
 impl Page {
-    pub fn to_html(&self) -> String {
-        self.ast.to_html(self.content.as_str())
+    pub fn to_html<F>(&self, plugin: Option<F>) -> String
+    where
+        F: Fn(&AstNode) -> Option<String>
+    {
+        self.ast.to_html(self.content.as_str(), plugin)
     }
 }
 
 pub struct Parser {
     content: String,
-    plugins: Vec<Box<dyn Plugin>>,
     meta: Option<Meta>,
 }
 
 impl Parser {
     /// Create a ConciseMarkdown parser from content
     pub fn new<B: AsRef<str>>(content: B) -> Self {
-        Self::new_with_plugins(content, vec![])
+        Self::new_with_plugins(content)
     }
 
     /// Consume current paser and generate a parsed page
@@ -46,7 +40,7 @@ impl Parser {
         Page { meta: self.meta, ast, content: self.content }
     }
 
-    fn new_with_plugins<B: AsRef<str>>(content: B, plugins: Vec<Box<dyn Plugin>>) -> Self {
+    fn new_with_plugins<B: AsRef<str>>(content: B) -> Self {
         let meta = Meta::new(content.as_ref());
         let mut content = if let Some(ref meta) = meta {
             content.as_ref()[meta.size..].to_owned()
@@ -61,7 +55,6 @@ impl Parser {
 
         Parser {
             content,
-            plugins,
             meta,
         }
     }
@@ -253,5 +246,21 @@ mod tests {
             assert_eq!(ast.tag, "div");
             assert_eq!(ast.children[0].borrow().tag, tag);
         }
+    }
+
+    #[test]
+    fn test_hook() {
+        let content = "![imgs][/path/to/image.jpg]";
+        let page = Parser::new(content).parse();
+
+        let imgsrc = "/images/test.png";
+        let hook = |astnode: &AstNode| {
+            if let AstNode::Image(name, url) = astnode {
+                return Some(format!(r#"<img src="{imgsrc}" />"#))
+            }
+            return None
+        };
+        let html = page.to_html(Some(hook));
+        println!("{html}")
     }
 }

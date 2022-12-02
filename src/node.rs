@@ -5,6 +5,22 @@ use std::rc::{Weak, Rc};
 use std::ops::Range;
 use std::cell::{Ref, RefCell};
 
+pub enum AstNode {
+    Text(String),
+    // (name, url)
+    Image(String, String),
+    // (name, url)
+    Url(String, String),
+    Mark(Mark),
+    // (level, title)
+    Heading(usize, String),
+    CodeBlock(String),
+    InlineCode(String),
+    Math(String),
+    // (tag, body)
+    General(String, String),
+}
+
 #[derive(Debug)]
 pub struct NodeData<T: Display + AsRef<str>> {
     pub tag: T,
@@ -46,15 +62,29 @@ impl<T: Display + AsRef<str>> Node<T> {
         self.data.borrow().range.end - self.data.borrow().range.start
     }
 
-    pub fn to_html<S: AsRef<str>>(&self, content: S) -> String {
-        self.data.borrow().to_html(content)
+    pub fn to_html<S: AsRef<str>, F>(&self, content: S, plugin: Option<F>) -> String
+    where
+        F: Fn(&AstNode) -> Option<String>
+    {
+        self.data.borrow().to_html(content, plugin.as_ref())
     }
 }
 
 impl<T: Display + AsRef<str>> NodeData<T> {
-    fn to_html<S: AsRef<str>>(&self, content: S) -> String {
+    fn to_html<S: AsRef<str>, F>(&self, content: S, plugin: Option<&F>) -> String
+    where
+        F: Fn(&AstNode) -> Option<String>
+    {
         let content = content.as_ref();
         let bodystr = &content[self.range.start..self.range.end];
+        let astnode = match self.tag.as_ref() {
+            _ => AstNode::General(self.tag.as_ref().to_owned(), bodystr.to_owned())
+        };
+        if let Some(run_on_render) = plugin {
+            if let Some(html) = run_on_render(&astnode) {
+                return html;
+            }
+        }
         let (start_tag, end_tag) = match self.tag.as_ref() {
             "text" => {
                 return bodystr.to_owned();
@@ -124,9 +154,18 @@ impl<T: Display + AsRef<str>> NodeData<T> {
             }
         };
 
+        // if segment.is_node() {
+        //      if let Some(content) = run_on_node(node) {
+        //          return content;
+        //      } else {
+        //          return node.to_thml();
+        //      }
+        // }
+        //
+
         let mut html = start_tag;
         for child in self.children.iter() {
-            html += &child.borrow().to_html(content);
+            html += &child.borrow().to_html(content, plugin);
         }
         html += &end_tag;
         html
