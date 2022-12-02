@@ -1,5 +1,5 @@
 mod property;
-mod subtitle;
+mod heading;
 mod codeblock;
 mod list;
 mod paragraph;
@@ -8,7 +8,7 @@ mod pair;
 mod link;
 
 pub use property::Property;
-pub use subtitle::Subtitle;
+pub use heading::Heading;
 pub use codeblock::Codeblock;
 pub use list::List;
 pub use paragraph::Paragraph;
@@ -16,22 +16,21 @@ pub use mark::Mark;
 pub use pair::Pair;
 pub use link::Link;
 
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 
 #[derive(Debug)]
 pub enum Token {
-    Subtitle(Subtitle),
+    Heading(Heading),
     Codeblock(Codeblock),
     List(List),
     Paragraph(Paragraph),
     BlankLine,
-    Empty,
 }
 
 impl Token {
     pub fn new(textlines: &[&str], indent: usize) -> Result<Self> {
         if textlines.len() == 0 {
-            return Ok(Self::Empty)
+            return Err(anyhow!("textlines are empty"));
         }
 
         let peekline = textlines[0];
@@ -40,8 +39,8 @@ impl Token {
         }
 
         let indentstr = " ".repeat(indent);
-        if peekline.starts_with(&format!("{indentstr}{}", Subtitle::MARK)) {
-            Ok(Token::Subtitle(Subtitle::new(&textlines)?))
+        if peekline.starts_with(&format!("{indentstr}{}", Heading::MARK)) {
+            Ok(Token::Heading(Heading::new(&textlines)?))
         } else if peekline.starts_with(&format!("{indentstr}{}", List::INDENT_MARK)) {
             Ok(Token::Codeblock(Codeblock::new(&textlines, indentstr.len() + List::INDENT_MARK.len())?))
         } else if peekline.starts_with(&format!("{indentstr}{}", List::LIST_MARK)) {
@@ -53,12 +52,11 @@ impl Token {
 
     pub fn len(&self) -> usize {
         match &self {
-            Self::Subtitle(subtitle) => subtitle.prop.val.len(),
+            Self::Heading(heading) => heading.prop.val.len(),
             Self::Codeblock(codeblock) => codeblock.prop.val.len(),
             Self::List(list) => list.prop.val.len(),
             Self::Paragraph(paragraph) => paragraph.prop.val.len(),
             Self::BlankLine => 1,
-            _ => 0,
         }
     }
 }
