@@ -96,8 +96,86 @@ impl Page {
 
 #[cfg(test)]
 mod tests {
+    use std::iter;
+
     use crate::*;
     use node::NodeTagName;
+
+    use indoc::indoc;
+    use html5ever::tree_builder::TreeSink;
+    use html5ever::QualName;
+    use html5ever::driver::ParseOpts;
+    use html5ever::{local_name, ns, namespace_url};
+    use html5ever::parse_fragment;
+    use markup5ever_rcdom::{Handle, NodeData, RcDom};
+    use html5ever::tendril::TendrilSink;
+
+    fn is_self_closing_tag(tag: &str) -> bool {
+        let self_closing_tag_list = vec![
+            // svg tags
+            "circle", "ellipse", "line", "path", "polygon", "polyline", "rect", "stop", "use",
+            // void tags
+            "area", "base", "br", "col", "command", "embed", "hr", "img", "input", "keygen", "link",
+            "meta", "param", "source", "track", "wbr",
+        ];
+        if self_closing_tag_list.iter().any(|&i| i == tag) {
+            true
+        } else {
+            false
+        }
+    }
+
+    fn get_html_outline(dirty_html: &str) -> String {
+        fn walker(indent: usize, node: &Handle) -> String {
+            let indentstr = format!("{}", iter::repeat(" ").take(indent).collect::<String>());
+
+            let mut outline = indentstr.to_string();
+            match node.data {
+                NodeData::Element {
+                    ref name,
+                    ..
+                } => {
+                    if is_self_closing_tag(&name.local) {
+                        outline += &format!("<{}", name.local);
+                    } else {
+                        outline += &format!("<{}>\n", name.local);
+                    }
+                },
+                _ => {},
+            }
+
+            for child in node.children.borrow().iter() {
+                if let NodeData::Element { .. } = child.data {
+                    outline += &walker(indent + 2, child);
+                }
+            }
+
+            if let NodeData::Element { ref name, .. } = node.data {
+                if is_self_closing_tag(&name.local) {
+                    outline += &format!("/>\n");
+                } else {
+                    outline += &format!("{}</{}>\n", indentstr, name.local);
+                }
+            }
+
+            outline
+        }
+
+        let parser = parse_fragment(
+            RcDom::default(),
+            ParseOpts::default(),
+            QualName::new(None, ns!(html), local_name!("body")),
+            vec![],
+        );
+        let mut dom = parser.one(dirty_html);
+        let html = dom.get_document();
+        let body = &html.children.borrow()[0];
+        let mut outline = String::new();
+        for child in body.children.borrow().iter() {
+            outline += &walker(0, child);
+        }
+        outline
+    }
 
     #[test]
     fn test_heading() {
@@ -117,5 +195,36 @@ mod tests {
             assert_eq!(ast.children[0].borrow().tag.name, NodeTagName::Heading);
             assert_eq!(ast.children[0].borrow().tag.attrs.get("level").map(|s| s.as_str()), Some(level));
         }
+    }
+
+    #[test]
+    fn test_list() {
+        let content = indoc! {r#"
+        - [nvim](https://neovim.io/) >= 0.7.0
+
+            nvim is great!
+
+        - [rust](https://www.rust-lang.org/tools/install) >= 1.64
+        "#};
+
+        let page = Page::new(content);
+        let html = page.render();
+        let outline = get_html_outline(html.as_str());
+        assert_eq!(outline, indoc! {r#"
+            <div>
+              <ul>
+                <li>
+                  <a>
+                  </a>
+                  <p>
+                  </p>
+                </li>
+                <li>
+                  <a>
+                  </a>
+                </li>
+              </ul>
+            </div>
+        "#});
     }
 }

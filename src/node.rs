@@ -129,7 +129,7 @@ impl Node {
                 }
             }
             NodeTagName::Link => {
-                let url = if let Some(url) = nodedata.tag.attrs.get("url") {
+                let url = if let Some(url) = nodedata.tag.attrs.get("href") {
                     url.to_owned()
                 } else {
                     "".to_owned()
@@ -171,13 +171,16 @@ impl Node {
 
         // Render all non-void element
         let mut html = String::new();
-        if let Some(mark) = nodedata.tag.get_markup() {
-            html += &format!("<{mark}>");
-            for child in self.children().iter() {
-                html.push_str(child.render(content, hook).as_str());
-            }
-            html += &format!("</{mark}>");
+        let (start_tag, end_tag) = if let Some(mark) = nodedata.tag.get_markup() {
+            (format!("<{mark}>"), format!("</{mark}>"))
+        } else {
+            ("".to_owned(), "".to_owned())
+        };
+        html += &start_tag;
+        for child in self.children().iter() {
+            html.push_str(child.render(content, hook).as_str());
         }
+        html += &end_tag;
 
         html
     }
@@ -215,18 +218,9 @@ impl NodeTag {
         self
     }
 
-    /// A void tag contains no content, but only name and attrs, see [4.3. Elements](https://www.w3.org/TR/2011/WD-html-markup-20110113/syntax.html#syntax-elements)
-    pub fn is_void_tag(&self) -> bool {
-        match self.name {
-            NodeTagName::Link | NodeTagName::Image => true,
-            _ => false,
-        }
-    }
-
     pub fn get_markup(&self) -> Option<String> {
         match self.name {
             NodeTagName::Heading => {
-                // heading level should between h1 to h6, see (here)[https://developer.mozilla.org/en-US/docs/Web/HTML/Element/Heading_Elements]
                 let level = match self.attrs.get("level").map(|s| s.as_str().parse::<usize>()) {
                     Some(Ok(level)) => {
                         level

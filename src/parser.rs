@@ -163,6 +163,7 @@ impl Parser {
         let value = heading.prop.val.as_str();
         let heading_size = value.len();
         let heading_stmt = value.trim_start_matches(|c| c == '#');
+        // heading level should between h1 to h6, see (here)[https://developer.mozilla.org/en-US/docs/Web/HTML/Element/Heading_Elements]
         let heading_level = match heading_size - heading_stmt.len() {
             0..=1 => 1,
             level @ 2..=6 => level,
