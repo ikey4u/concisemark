@@ -3,18 +3,18 @@ use super::Property;
 use anyhow::Result;
 
 #[derive(Debug)]
-pub struct Subtitle {
+pub struct Heading {
     pub prop: Property,
 }
 
-impl Subtitle {
+impl Heading {
     pub const MARK: &str = "#";
 
     pub fn new(lines: &[&str]) -> Result<Self> {
-        let subtitle = lines.get(0).unwrap_or(&"");
+        let heading = lines.get(0).unwrap_or(&"");
         Ok(Self {
             prop: Property {
-                val: format!("{subtitle}\n"),
+                val: format!("{heading}\n"),
             }
         })
     }

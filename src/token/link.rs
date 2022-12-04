@@ -1,5 +1,6 @@
 #[derive(Debug)]
 pub struct Link {
+    /// name with extensible attributes (the format has not been determined for now)
     pub namex: String,
     pub uri: String,
     pub is_image_link: bool,
