@@ -1,4 +1,5 @@
 use crate::token::Mark;
+use crate::utils;
 
 use std::collections::HashMap;
 use std::rc::{Weak, Rc};
@@ -101,7 +102,7 @@ impl Node {
             NodeTagName::Text => return bodystr.to_owned(),
             NodeTagName::Code => {
                 if nodedata.tag.attrs.contains_key("inlined") {
-                    return format!("<code>{}</code>", bodystr.trim_matches(|c| c == '`'));
+                    return format!("<code>{}</code>", utils::escape_to_html(bodystr.trim_matches(|c| c == '`')));
                 } else {
                     let mut indent = bodystr.len();
                     for line in bodystr.lines().filter(|line| line.len() > 0) {
@@ -117,7 +118,7 @@ impl Node {
                             line
                         }
                     }).collect::<Vec<&str>>();
-                    return format!("<pre><code>{}</pre></code>", bodystr.join("\n").trim());
+                    return format!("<pre><code>{}</pre></code>", utils::escape_to_html(bodystr.join("\n").trim()));
                 }
             }
             NodeTagName::Math => {
@@ -262,79 +263,75 @@ pub enum NodeTagName {
     Image,
     /// Charaters data
     Text,
-    ///
-    /// no_run
-    ///
     /// To parse a list, ConciseMark split list into several segments, take the following as an
     /// example
     ///
     /// ```text
-    ///     - This is a item
+    /// - This is a item
     ///
-    ///         Some content
+    ///     Some content
     ///
-    ///     - This is another list item
+    /// - This is another list item
     ///
-    ///         Some other content
+    ///     Some other content
     /// ```
     /// After parsing above list, we got a [`NodeTagName::List`]
     ///
     /// ```text
-    ///     +----------------------------+
-    ///     |- This is a item            |
-    ///     |                            |
-    ///     |    Some content            |
-    ///     |                            |
-    ///     |- This is another list item |
-    ///     |                            |
-    ///     |    Some other content      |
-    ///     +----------------------------+
+    /// +----------------------------+
+    /// |- This is a item            |
+    /// |                            |
+    /// |    Some content            |
+    /// |                            |
+    /// |- This is another list item |
+    /// |                            |
+    /// |    Some other content      |
+    /// +----------------------------+
     /// ```
     ///
     /// And two [`NodeTagName::ListItem`]s
     ///
     /// ```text
-    ///     +----------------------------+
-    ///     |- This is a item            |
-    ///     |                            |
-    ///     |    Some content            |
-    ///     +----------------------------+
-    ///     |- This is another list item |
-    ///     |                            |
-    ///     |    Some other content      |
-    ///     +----------------------------+
+    /// +----------------------------+
+    /// |- This is a item            |
+    /// |                            |
+    /// |    Some content            |
+    /// +----------------------------+
+    /// |- This is another list item |
+    /// |                            |
+    /// |    Some other content      |
+    /// +----------------------------+
     /// ```
     ///
     /// For each [`NodeTagName::ListItem`], we have a [`NodeTagName::ListHead`]
     ///
     /// ```text
-    ///      +--------------------------+
-    ///     -|This is a item            |
-    ///      +--------------------------+
+    ///  +--------------------------+
+    /// -|This is a item            |
+    ///  +--------------------------+
     ///
-    ///         Some content
-    ///      +--------------------------+
-    ///     -|This is another list item |
-    ///      +--------------------------+
+    ///     Some content
+    ///  +--------------------------+
+    /// -|This is another list item |
+    ///  +--------------------------+
     ///
-    ///          Some other content
+    ///      Some other content
     /// ```
     ///
     /// and a [`NodeTagName::ListBody`]
     ///
     /// ```text
-    ///     - This is a item
+    /// - This is a item
     ///
-    ///         +-----------------------+
-    ///         |Some content           |
-    ///         +-----------------------+
-    ///     - This is another list item
+    ///     +-----------------------+
+    ///     |Some content           |
+    ///     +-----------------------+
+    /// - This is another list item
     ///
-    ///         +-----------------------+
-    ///         |Some other content     |
-    ///         +-----------------------+
+    ///     +-----------------------+
+    ///     |Some other content     |
+    ///     +-----------------------+
     /// ```
-    ///
     List,
     /// See [`NodeTagName::List`]
     ListItem,

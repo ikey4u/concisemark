@@ -24,6 +24,7 @@
 pub mod meta;
 pub mod node;
 pub mod token;
+pub mod utils;
 mod parser;
 
 use meta::Meta;
