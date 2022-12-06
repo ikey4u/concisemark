@@ -4,6 +4,7 @@ ConciseMark is a simplified markdown parsing library written in Rust with custom
 in mind. The `simplified` here means it only supports some common markdown syntax but not full.
 Here is a list it supports for now
 
+- markdown meta
 - codeblock and inline codeblock
 - heading
 - list
@@ -36,4 +37,4 @@ Here is a list it supports for now
     This syntax can be easily extended by library user.
 
 With the continuous development of ConciseMark, this list will grow, see its
-[documentation](https://docs.rs/concisemark/0.2.0/concisemark/index.html) for usage.
+[documentation](https://docs.rs/concisemark/0.2.1/concisemark/index.html) for usage.

@@ -11,15 +11,15 @@
 //! The output html will be
 //!
 //! ```text
-//! <div><h1> Title\n</h1></div>
+//! <div><h1>Title</h1></div>
 //! ```
 //!
 //! The outermost `div` is the root of the rendered html page.
 //!
 //! ## Hook
 //!
-//! `page` maintains a AST structure which you can use to hook the node you are
-//! interested, please see [`Page`] for more information.
+//! `page` maintains an AST structure which you can use to hook the nodes you are
+//! interested in, please see [`Page`] for more information.
 //!
 pub mod meta;
 pub mod node;

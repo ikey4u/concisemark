@@ -1,11 +1,11 @@
 [package]
 name = "concisemark"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["zhq <pwnkeeper@gmail.com>"]
 description = "A simplified markdown parsing library"
 homepage = "https://github.com/ikey4u/concisemark"
-documentation = "https://docs.rs/concisemark/0.2.0/concisemark"
+documentation = "https://docs.rs/concisemark/0.2.1/concisemark"
 repository = "https://github.com/ikey4u/concisemark"
 license = "MIT"
 readme = "README.md"

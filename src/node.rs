@@ -1,3 +1,4 @@
+//! AST tree
 use crate::token::Mark;
 use crate::utils;
 
@@ -6,6 +7,8 @@ use std::rc::{Weak, Rc};
 use std::ops::Range;
 use std::cell::{Ref, RefCell};
 
+/// An AST node
+///
 /// It seems impossible to use only one structure to implement feature that
 ///
 /// 1. add a child `C` to current node
@@ -13,8 +16,8 @@ use std::cell::{Ref, RefCell};
 ///
 /// As a result, we use a compromise way to finish that task.
 ///
-/// We separate node and its data into two structures `Node` and `NodeData`,
-/// `Node` is the main interface when interact with a tree, and `NodeData` should be used internal
+/// We separate node and its data into two structures [`Node`] and [`NodeData`],
+/// [`Node`] is the main interface when interact with a tree, and [`NodeData`] should be used internal
 /// only.
 ///
 #[derive(Debug)]
@@ -187,6 +190,7 @@ impl Node {
     }
 }
 
+/// Data contained in a [`Node`]
 #[derive(Debug)]
 pub struct NodeData {
     pub tag: NodeTag,
@@ -200,9 +204,12 @@ pub struct NodeData {
     pub children: Vec<Rc<RefCell<NodeData>>>,
 }
 
+/// Meta information for [`Node`]
 #[derive(Debug, PartialEq)]
 pub struct NodeTag {
+    /// Node name
     pub name: NodeTagName,
+    /// Node attributes
     pub attrs: HashMap<String, String>,
 }
 
