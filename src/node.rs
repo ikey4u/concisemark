@@ -125,7 +125,22 @@ impl Node {
                 }
             }
             NodeTagName::Math => {
-                if let Ok(math) = katex::render(bodystr.trim_matches(|x| x == '$')) {
+                // if math node is leaf node, then we render it in display mode
+                let is_leaf = if let Some(parent) = &nodedata.parent.upgrade() {
+                    // tailing newline character always counts one AST node
+                    parent.borrow().children.len() == 2
+                } else {
+                    false
+                };
+
+                let opts = match katex::Opts::builder().display_mode(is_leaf).build() {
+                    Ok(opts) => opts,
+                    Err(e) => {
+                        log::warn!("failed to create katex options: {e:?}");
+                        return bodystr.to_owned();
+                    }
+                };
+                if let Ok(math) = katex::render_with_opts(bodystr.trim_matches(|x| x == '$'), &opts) {
                     return format!("{}", math);
                 } else {
                     log::warn!("failed to render math equation: {}", bodystr);
