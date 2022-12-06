@@ -37,4 +37,4 @@ Here is a list it supports for now
     This syntax can be easily extended by library user.
 
 With the continuous development of ConciseMark, this list will grow, see its
-[documentation](https://docs.rs/concisemark/0.2.1/concisemark/index.html) for usage.
+[documentation](https://docs.rs/concisemark/0.2.2/concisemark/index.html) for usage.
