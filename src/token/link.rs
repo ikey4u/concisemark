@@ -29,16 +29,15 @@ impl Link {
             }
         };
 
-        let (middle, end) = match (text.find("]("), text.find(")")) {
-            (Some(middle), Some(end)) => {
-                if middle >= end {
-                    return None;
-                }
-                (middle, end)
-            }
-            _ => {
-                return None;
-            }
+        let middle = if let Some(middle) = text.find("](") {
+            middle
+        } else {
+            return None;
+        };
+        let end = if let Some(end) = &text[middle..].find(")") {
+            middle + end
+        } else {
+            return None;
         };
         let namex = text[1..middle].to_owned();
         let uri = text[(middle + 2)..end].to_owned();
@@ -53,5 +52,47 @@ impl Link {
             size,
             is_image_link,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_link() {
+        let text = "[google](https://google.com)";
+        let link = Link::new(text);
+        assert!(link.is_some());
+        let link = link.unwrap();
+        assert_eq!(link.namex.as_str(), "google");
+        assert_eq!(link.uri, "https://google.com");
+        assert_eq!(link.is_image_link, false);
+
+        let text = "![google](https://google.com)";
+        let link = Link::new(text);
+        assert!(link.is_some());
+        let link = link.unwrap();
+        assert_eq!(link.is_image_link, true);
+
+        let text = "[Google Home (google)](https://google.com)";
+        let link = Link::new(text);
+        assert!(link.is_some());
+        let link = link.unwrap();
+        assert_eq!(link.namex.as_str(), "Google Home (google)");
+        assert_eq!(link.uri, "https://google.com");
+        assert_eq!(link.is_image_link, false);
+
+        let text = "[Google Home (google)](https://google.com";
+        let link = Link::new(text);
+        assert!(link.is_none());
+
+        let text = "[Google Home (google)] (https://google.com)";
+        let link = Link::new(text);
+        assert!(link.is_none());
+
+        let text = "[Google Home (google)(https://google.com)";
+        let link = Link::new(text);
+        assert!(link.is_none());
     }
 }
