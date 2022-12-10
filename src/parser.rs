@@ -30,10 +30,10 @@ impl Parser {
     }
 
     /// Consume current paser and generate a parsed page
-    pub fn parse(self) -> Page {
+    pub fn parse(self) -> (Option<Meta>, Node, String) {
         let tag = NodeTag::new(NodeTagName::Section);
         let ast = self.parse_document(tag, 0, self.content.len(), 0);
-        Page { meta: self.meta, ast, content: self.content }
+        (self.meta, ast, self.content)
     }
 
     fn parse_document(&self, root: NodeTag, pbase: usize, length: usize, indent: usize) -> Node {

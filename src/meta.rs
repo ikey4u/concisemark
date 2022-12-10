@@ -1,22 +1,19 @@
-//! Page Meta
-//!
-//! You can put an optional html comment (whose body is in toml format) in the front of your markdown file
-//! ```text
-//! <!---
-//! title = "Your title"
-//! subtitle = "Your subtitle"
-//! date = "2021-10-13 00:00:00"
-//! authors = ["name <example@gmail.com>"]
-//! tags = ["demo", "example"]
-//! -->
-//! ```
-//! This content will be parsed as your page meta [`Meta`].
 use serde::Serialize;
 use serde::Deserialize;
 use chrono::DateTime;
 use chrono::Utc;
 
-/// See [`self`]
+/// You can put an optional html comment (whose body is in toml format) in the front of your markdown file
+/// ```text
+/// <!---
+/// title = "Your title"
+/// subtitle = "Your subtitle"
+/// date = "2021-10-13 00:00:00"
+/// authors = ["name <example@gmail.com>"]
+/// tags = ["demo", "example"]
+/// -->
+/// ```
+/// This content will be parsed as your page meta [`Meta`].
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Meta {
     #[serde(with = "serde_meta_date")]

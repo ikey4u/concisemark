@@ -1,22 +1,48 @@
-# ConciseMark
+# ConciseMark [(documentation)](https://docs.rs/concisemark/0.2.2/concisemark/index.html)
 
 ConciseMark is a simplified markdown parsing library written in Rust with customization, math supporting
 in mind. The `simplified` here means it only supports some common markdown syntax but not full.
-Here is a list it supports for now
+
+## Features
+
+- Latex PDF Generation
+
+    ConciseMark supports you to convert your markdown into xelatex source file, then you can compile it
+    with xelatex command to generate a pretty PDF document.
+
+    Note that to make the generated xelatex source compilable, you have to install the following
+    fonts onto your system
+
+    - [Lora](https://fonts.google.com/specimen/Lora)
+    - [Source Code Pro](https://fonts.google.com/specimen/Source+Code+Pro?category=Monospace)
+    - [Source Han Serif SC](https://github.com/adobe-fonts/source-han-serif/releases)
 
 - markdown meta
+
+    You can put an optional html comment (whose body is in toml format) in the front of your markdown file
+
+        <!---
+        title = "Your title"
+        subtitle = "Your subtitle"
+        date = "2021-10-13 00:00:00"
+        authors = ["name <example@gmail.com>"]
+        tags = ["demo", "example"]
+        -->
+
+    This content will be parsed as your page meta, you can use it when rendering latex or html page.
+
 - codeblock and inline codeblock
 - heading
 - list
 - link
 - image
-- math (supported by [katex](https://katex.org/))
+- math (Math in HTML is supported by [katex](https://katex.org/))
 
-    Use `$a^2 + b^2$` to write math equation: $a^2 + b^2$
+    Use one syntax such as `$a^2 + b^2$` to write inline or display mode math equation.
 
 - extension
 
-    This is a ConciseMark extension, the syntax is
+    This is a ConciseMark extension, the format is
 
         @KEY{VALUE}
 
@@ -26,15 +52,8 @@ Here is a list it supports for now
 
         `@emoji{smile}` will render to 😄.
 
-    - math
-
-        `@math{a^2 + b^2}` is the same as `$a^2 + b^2$`. 
-
     - kbd
 
         `@kbd{cmd + f}` will render to `⌘+f`.
 
-    This syntax can be easily extended by library user.
-
-With the continuous development of ConciseMark, this list will grow, see its
-[documentation](https://docs.rs/concisemark/0.2.2/concisemark/index.html) for usage.
+    This feature will be exposed to library user in future.

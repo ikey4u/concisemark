@@ -1,6 +1,6 @@
 //! # ConciseMark - a simplified markdown parsing library
 //!
-//! ## Usage
+//! ConciseMark can render markdown into HTML or Latex page, for example
 //!
 //!     use concisemark::Page;
 //!
@@ -16,38 +16,175 @@
 //!
 //! The outermost `div` is the root of the rendered html page.
 //!
+//! If you want to render the markdown into a pretty PDF document, you may be interested in
+//! [`Page::render_latex`], have it a look!
+//!
 //! ## Hook
 //!
-//! `page` maintains an AST structure which you can use to hook the nodes you are
-//! interested in, please see [`Page`] for more information.
+//! [`Page`] maintains an AST structure which you can use to hook the nodes you are
+//! interested in, please see its document for more information.
 //!
 pub mod meta;
 pub mod node;
 pub mod token;
 pub mod utils;
 mod parser;
+mod render;
 
 use meta::Meta;
 use node::Node;
 use parser::Parser;
 
+/// A placehodler for future usage
+#[derive(Debug)]
+pub struct PageOptions {
+}
+
+/// A markdown page
 pub struct Page {
+    /// Meta information for the page, such as author, tags ...
     pub meta: Option<Meta>,
+    /// Page AST (abstract syntax tree), see [`Page::transform`] to learn how to modify it
     pub ast: Node,
+    /// The markdown file content (with `meta` stripped). `ast` does not store any text but only node range,
+    /// and content is necessary to retrive node text with `ast` information.
     pub content: String,
+    /// Page options, a placehodler for future usage
+    pub options: Option<PageOptions>,
 }
 
 impl Page {
     /// Create a new markdown page from `content`
     pub fn new<S: AsRef<str>>(content: S) -> Self {
-        Parser::new(content).parse()
+        let (meta, ast, content) = Parser::new(content).parse();
+        Self {
+            meta,
+            ast,
+            content,
+            options: None,
+        }
+    }
+
+    pub fn with_options(mut self, options: PageOptions) -> Self {
+        self.options = Some(options);
+        self
     }
 
     /// Render markdown into HTML page
+    ///
+    ///     use concisemark::Page;
+    ///
+    ///     let content = "# Title";
+    ///     let page = Page::new(content);
+    ///     let html = page.render();
+    ///
+    /// The output html will be
+    ///
+    /// ```text
+    /// <div><h1>Title</h1></div>
+    /// ```
     pub fn render(&self) -> String {
         self.render_with_hook(&|_| {
             None
         })
+    }
+
+    /// Render markdown into XeLaTex source
+    ///
+    /// Note that latex can not embed image from url, you must download the image and fix the
+    /// image path to generate a working tex file, the following is a dirty and quick example.
+    ///
+    ///     use concisemark::Page;
+    ///     use concisemark::node::Node;
+    ///     use concisemark::node::NodeTagName;
+    ///     use concisemark::utils;
+    ///
+    ///     use std::fs::OpenOptions;
+    ///     use std::process::Command;
+    ///     use std::io::Write;
+    ///
+    ///     use indoc::indoc;
+    ///
+    ///     let content = indoc! {r#"
+    ///         ![animal-online](https://cn.bing.com/th?id=OHR.NorwayMuskox_EN-CN7806818932_1920x1080.jpg&w=720)
+    ///
+    ///         ![animal-offlie](assets/th.jpg)
+    ///     "#
+    ///     };
+    ///     let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    ///     let draft_dir = manifest_dir.join("draft");
+    ///     std::fs::create_dir_all(draft_dir.as_path()).unwrap();
+    ///
+    ///     let page = Page::new(content);
+    ///     let hook = |node: &Node| {
+    ///         let mut nodedata = node.data.borrow_mut();
+    ///         if nodedata.tag.name == NodeTagName::Image {
+    ///             let src = nodedata.tag.attrs.get("src").unwrap().to_owned();
+    ///             let name = nodedata.tag.attrs.get("name").unwrap().to_owned();
+    ///             let output_path;
+    ///             if src.starts_with("https://") || src.starts_with("http://") {
+    ///                 output_path = utils::download_image_fs(src, draft_dir.as_path(), name).unwrap();
+    ///             } else {
+    ///                 output_path = manifest_dir.join(src);
+    ///             }
+    ///             nodedata.tag.attrs.insert("src".to_owned(), format!("{}", output_path.display()));
+    ///         }
+    ///     };
+    ///     page.transform(hook);
+    ///
+    ///     let setup = include_str!("../assets/setup.tex");
+    ///     let wanted = indoc! {r#"
+    ///         \begin{document}
+    ///
+    ///         \begin{figure}[H]
+    ///         \centerline{\includegraphics[width=0.7\textwidth]{PLACEHOLDER_ONLINE}}
+    ///         \caption{animal-online}
+    ///         \end{figure}
+    ///
+    ///
+    ///         \begin{figure}[H]
+    ///         \centerline{\includegraphics[width=0.7\textwidth]{PLACEHOLDER_OFFLINE}}
+    ///         \caption{animal-offlie}
+    ///         \end{figure}
+    ///
+    ///         \end{document}
+    ///     "#};
+    ///     let wanted = wanted.replace(
+    ///         "PLACEHOLDER_ONLINE",
+    ///         &format!("{}", manifest_dir.join("draft").join("animal-online.jpg").display())
+    ///     ).replace(
+    ///         "PLACEHOLDER_OFFLINE",
+    ///         &format!("{}", manifest_dir.join("assets").join("th.jpg").display())
+    ///     );
+    ///     let pagesrc = &page.render_latex()[setup.len()..];
+    ///     assert_eq!(wanted.trim(), pagesrc.trim());
+    ///
+    ///     let latex = page.render_latex();
+    ///     let texfile = draft_dir.join("output.tex");
+    ///     let mut f = OpenOptions::new().truncate(true).write(true).create(true).open(&texfile).unwrap();
+    ///     f.write(latex.as_bytes()).unwrap();
+    ///     let mut cmd = Command::new("xelatex");
+    ///     cmd.current_dir(&draft_dir);
+    ///     cmd.arg(&texfile);
+    ///     _ = cmd.output();
+    pub fn render_latex(&self) -> String {
+        let mut page = include_str!("../assets/setup.tex").to_owned();
+        let mut document = render::latex::Cmd::new("document").enclosed();
+        if let Some(meta) = &self.meta {
+            let title = render::latex::Cmd::new("title").with_posarg(&meta.title);
+            document.append_cmd(&title);
+            if let Some(authors) = &meta.authors {
+                let authors = render::latex::Cmd::new("author").with_posarg(authors.join(", "));
+                document.append_cmd(&authors);
+            }
+            let date = render::latex::Cmd::new("date").with_posarg(&meta.date.to_string());
+            document.append_cmd(&date);
+            let maketitle = render::latex::Cmd::new("maketitle");
+            document.append_cmd(&maketitle);
+        }
+        document.append(render::latex::generate(&self.ast, self.content.as_str()));
+        page.push_str(&document.to_string());
+        page
     }
 
     /// Render markdown into HTML page with hook
@@ -58,7 +195,7 @@ impl Page {
     where
         F: Fn(&Node) -> Option<String>
     {
-        self.ast.render(self.content.as_str(), Some(hook))
+        render::html::generate(&self.ast, self.content.as_str(), Some(hook))
     }
 
     /// Modify markdown AST node with hook
@@ -97,7 +234,10 @@ impl Page {
 
 #[cfg(test)]
 mod tests {
-    use std::iter;
+    use std::fs::OpenOptions;
+    use std::io::Write;
+    use std::process::Command;
+    use std::{iter, env};
 
     use crate::*;
     use node::NodeTagName;
@@ -247,5 +387,87 @@ mod tests {
         "#}.trim();
         let html = page.render();
         assert_eq!(displayed_math_html.trim(), html.trim());
+
+        let page = Page::new(indoc! {r#"
+            - display mode math equation in list
+
+                The follwoing is a display mode math equation
+
+                $a^2 + b^2 = c^2$
+        "#});
+        let html = page.render();
+        let displyed_math_html_in_list = indoc! {r#"
+            <div><ul><li>display mode math equation in list
+            <p>    The follwoing is a display mode math equation
+            </p><p>    <span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">a^2 + b^2 = c^2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.9474em;vertical-align:-0.0833em;"></span><span class="mord"><span class="mord mathnormal">a</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8641em;"></span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8641em;"></span><span class="mord"><span class="mord mathnormal">c</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span></span>
+            </p></li></ul></div>
+        "#}.trim();
+        assert_eq!(displyed_math_html_in_list.trim(), html.trim());
+    }
+
+    #[test]
+    fn test_latex() {
+        let content = indoc! {r#"
+            ![animal-online](https://cn.bing.com/th?id=OHR.NorwayMuskox_EN-CN7806818932_1920x1080.jpg&w=720)
+
+            ![animal-offlie](assets/th.jpg)
+        "#
+        };
+        let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let draft_dir = manifest_dir.join("draft");
+        std::fs::create_dir_all(draft_dir.as_path()).unwrap();
+
+        let page = Page::new(content);
+        let hook = |node: &Node| {
+            let mut nodedata = node.data.borrow_mut();
+            if nodedata.tag.name == NodeTagName::Image {
+                let src = nodedata.tag.attrs.get("src").unwrap().to_owned();
+                let name = nodedata.tag.attrs.get("name").unwrap().to_owned();
+                let output_path;
+                if src.starts_with("https://") || src.starts_with("http://") {
+                    output_path = utils::download_image_fs(src, draft_dir.as_path(), name).unwrap();
+                } else {
+                    output_path = manifest_dir.join(src);
+                }
+                nodedata.tag.attrs.insert("src".to_owned(), format!("{}", output_path.display()));
+            }
+        };
+        page.transform(hook);
+
+        let setup = include_str!("../assets/setup.tex");
+        let wanted = indoc! {r#"
+            \begin{document}
+
+            \begin{figure}[H]
+            \centerline{\includegraphics[width=0.7\textwidth]{PLACEHOLDER_ONLINE}}
+            \caption{animal-online}
+            \end{figure}
+
+
+            \begin{figure}[H]
+            \centerline{\includegraphics[width=0.7\textwidth]{PLACEHOLDER_OFFLINE}}
+            \caption{animal-offlie}
+            \end{figure}
+
+            \end{document}
+        "#};
+        let wanted = wanted.replace(
+            "PLACEHOLDER_ONLINE",
+            &format!("{}", manifest_dir.join("draft").join("animal-online.jpg").display())
+        ).replace(
+            "PLACEHOLDER_OFFLINE",
+            &format!("{}", manifest_dir.join("assets").join("th.jpg").display())
+        );
+        let pagesrc = &page.render_latex()[setup.len()..];
+        assert_eq!(wanted.trim(), pagesrc.trim());
+
+        let latex = page.render_latex();
+        let texfile = draft_dir.join("output.tex");
+        let mut f = OpenOptions::new().truncate(true).write(true).create(true).open(&texfile).unwrap();
+        f.write(latex.as_bytes()).unwrap();
+        let mut cmd = Command::new("xelatex");
+        cmd.current_dir(&draft_dir);
+        cmd.arg(&texfile);
+        _ = cmd.output();
     }
 }

@@ -1,0 +1,167 @@
+% TODO: convert comments to english and refine the settings
+%
+% latex 文档块注释
+\newcommand{\CMT}[1]{}
+
+\documentclass[a4paper,11pt]{article}
+
+% 字体处理包, 放在最前面
+\usepackage{fontspec}
+% 英文字体
+\setmainfont{Lora}
+\setsansfont{Lora}
+\setmonofont{Source Code Pro}
+% 中文字体 {
+    % 中文自动换行
+    \XeTeXlinebreaklocale "zh"
+    \XeTeXlinebreakskip = 0pt plus 1pt
+    % 中文编码支持
+    \usepackage{xltxtra, xunicode}
+    % 中文支持包
+    \usepackage[AutoFakeBold=true, AutoFakeSlant=true]{xeCJK}
+    % 书签
+    \usepackage{CJKutf8}
+    % 中文字体设置
+    \setCJKmainfont{Source Han Serif SC}
+    \setCJKsansfont{Source Han Serif SC}
+    \setCJKmonofont{Source Han Serif SC}
+
+    % TODO: fixme
+    \setCJKfamilyfont{SimSun}{Source Han Serif SC}
+    \setCJKfamilyfont{SimHei}{Source Han Serif SC}
+    \setCJKfamilyfont{FangSong}{Source Han Serif SC}
+    \setCJKfamilyfont{KaiTi}{Source Han Serif SC}
+    \setCJKfamilyfont{YouYuan}{Source Han Serif SC}
+
+    \newcommand{\song}{\CJKfamily{SimSun}} % 宋体
+    \newcommand{\hei}{\CJKfamily{SimHei}}  % 黑体
+    \newcommand{\fs}{\CJKfamily{FangSong}} % 仿宋
+    \newcommand{\kai}{\CJKfamily{KaiTi}}   % 楷体
+    \newcommand{\yy}{\CJKfamily{YouYuan}}  % 楷体
+% }
+
+% 排版设计 {
+    \usepackage{geometry}
+
+    % 设置缩进
+    \usepackage{indentfirst}
+    \setlength{\parindent}{2em}
+
+    % 设置行距
+    \linespread{1.6}
+
+    \usepackage{titlesec}
+    \usepackage{titletoc}
+    % 设置脚注
+    \renewcommand*{\thefootnote}{\arabic{footnote}} % 脚注为罗马数字编号
+    \usepackage[perpage,stable]{footmisc} % 每页重新编号,如果不希望这样可以去掉 [perpage]
+    % 设置页眉
+    \usepackage{fancyhdr}
+    \usepackage{pageslts}
+    % 默认选用的页码为数字格式
+    \pagenumbering{arabic}
+    % 多行表格
+    \usepackage{multirow}
+% }
+
+% 图形与符号 {
+    % 避免浮动
+    \usepackage{float}
+    % 插入图片的宏包
+    \usepackage{graphicx}
+    % 图标包 typicous
+    % \usepackage{typicons}
+    % 作图
+    \usepackage{tikz}
+    \usetikzlibrary{graphs}
+    \usepackage{pgfplots}
+    \usepackage{mathtools}
+    \usepgfplotslibrary{groupplots}
+    \usetikzlibrary{arrows.meta}
+    \usetikzlibrary{shapes.geometric, arrows}
+    % 流程图起始结束
+    \tikzstyle{startstop} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black, fill=red!30]
+    \tikzstyle{io} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=blue!30]
+    \tikzstyle{process} = [rectangle, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=orange!30]
+    \tikzstyle{decision} = [diamond, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=green!30]
+    \tikzstyle{arrow} = [thick,->,>=stealth]
+% }
+
+% 其他辅助包 {
+    % 各种下划线
+    \usepackage{ulem}
+
+    % 超链接与书签包
+    %
+    % 1. 需要将包 url 放在 hyperref 包之前保证长 url 能够换行
+    % 2. 加入超链接的用法为
+    %
+    %        \url{https://www.google.com}或\href{https://www.google.com}{Google}
+    %
+    % 3. hyperref 必须加入 unicode 方式, 保证书签能够显示 utf8 字符
+    \usepackage[hyphens]{url}
+    \usepackage[unicode,colorlinks,linkcolor=black,anchorcolor=blue,citecolor=green]{hyperref}
+
+    % 导入 pdf 文件, 用法:  \includepdf{mypdffile.pdf}
+    \usepackage{pdfpages}
+
+    % 数学长等号
+    \usepackage{extarrows}
+    % 特殊符号
+    \usepackage{bbding}
+    % 矩阵中使用虚线的宏包 TODO(2021-12-10): 需要额外安装
+    % \usepackage{pmat}
+
+    \usepackage{enumitem}
+% }
+
+% 数学公式 {
+    \usepackage{latexsym}
+    \usepackage{amsmath}                 % AMS LaTeX宏包
+    \usepackage{amssymb}                 % 用来排版漂亮的数学公式
+    \usepackage{amsbsy}
+    \usepackage{amsthm}
+    \usepackage{amsfonts}
+    \usepackage{mathrsfs}                % 英文花体字体
+    \usepackage{bm}                      % 数学公式中的黑斜体
+    \usepackage{relsize}                 % 调整公式字体大小：\mathsmaller, \mathlarger
+    \usepackage{caption}                 % 浮动图形和表格标题样式
+    \usepackage{esint}                   % 面积分符号\oiint
+    \usepackage{mathdots}
+    \allowdisplaybreaks
+% }
+
+% 代码格式 {
+    \usepackage{algorithm}
+    \usepackage{algorithmic}
+
+    \usepackage{fancyvrb}
+    \usepackage{color}
+    % \usepackage[colorlinks,linkcolor=black,anchorcolor=blue,citecolor=green]{hyperref}
+
+    \usepackage{listings}
+    % 一般 lstlisitng 样式
+    \lstdefinestyle{general}{
+        basicstyle=\linespread{0.8}\small\ttfamily, % 代码行距设置为 0.8
+        frameround=fttt,
+        frame=trBL,
+        numbers=left,
+        firstnumber=1,
+        morecomment=[l],
+        keepspaces=true,
+        morecomment=[s][\color{blue}]{/*+}{*/},
+        morecomment=[s][\color{green}]{/*-}{*/},
+        morecomment=[s][\color{red}]{/**}{*/},
+    }
+    % 模拟 verb 环境实现自动换行
+    \lstdefinestyle{verb} {
+        upquote=true,
+        aboveskip=10pt, % lst 和上面的间距
+        belowskip=0pt, % lst 和下面的间距
+        basicstyle=\linespread{1.0}\small\ttfamily,  % 代码行距设置为 0.8
+        columns=flexible,
+        breaklines=true, % 启用自动换行
+        frame=single, % 单边框
+        postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space}, % 换行符号
+    }
+% }

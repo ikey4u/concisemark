@@ -24,6 +24,7 @@ chrono = { version = "0.4.22", features = ["serde"] }
 log = "0.4.17"
 tracing = "0.1.37"
 tracing-subscriber = "0.3.16"
+ureq = "2.5.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 katex = { version = "0.4", default-features = false, features = ["wasm-js"] }

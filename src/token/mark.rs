@@ -1,42 +1,3 @@
-use std::collections::HashMap;
-
-use once_cell::sync::Lazy;
-use indoc::formatdoc;
-
-static SYMBOLS: Lazy<HashMap::<&'static str, char>> = Lazy::new(|| {
-    let mut mp = HashMap::new();
-    mp.insert("alpha", 'α');
-    mp.insert("beta", 'β');
-    mp.insert("gamma", 'γ');
-    mp.insert("delta", 'δ');
-    mp.insert("epsilon", 'ε');
-    mp.insert("eta", 'η');
-    mp.insert("theta", 'θ');
-    mp.insert("kappa", 'κ');
-    mp.insert("lambda", 'λ');
-    mp.insert("mu", 'μ');
-    mp.insert("pi", 'π');
-    mp.insert("rho", 'ρ');
-    mp.insert("sigma", 'σ');
-    mp.insert("tau", 'τ');
-    mp.insert("phi", 'φ');
-    mp.insert("psi", 'ψ');
-    mp.insert("omega", 'ω');
-    mp.insert("ok", '✓');
-    mp.insert("xx", 'x');
-    mp.insert("l", '←');
-    mp.insert("r", '→');
-    mp.insert("u", '↑');
-    mp.insert("d", '↓');
-    mp.insert("ll", '⇐');
-    mp.insert("rr", '⇒');
-    mp.insert("lh", '☜');
-    mp.insert("rh", '☞');
-    mp.insert("*", '☆');
-    mp.insert("**", '★');
-    mp
-});
-
 #[derive(Debug, Default)]
 pub struct Mark {
     pub name: String,
@@ -49,6 +10,11 @@ impl Mark {
     const MARK_TAG_LIST: &'static [&'static str] = &[
         "math", "sym", "plot", "img", "video", "emoji", "a", "char", "kbd",
     ];
+
+    pub fn new_from_str<S: AsRef<str>>(content: S) -> Option<Mark> {
+        let content = content.as_ref().chars().collect::<Vec<char>>();
+        Self::new(&content[..])
+    }
 
     // format: @<name>[attrs]{value}
     pub fn new(chars: &[char]) -> Option<Mark> {
@@ -135,70 +101,5 @@ impl Mark {
             value: body.trim().to_string(),
             size: head.iter().collect::<String>().len() + end_mark.len() + body.len() + end_mark.len(),
         })
-    }
-
-    pub fn parse(&self) -> String {
-        match self.name.as_str() {
-            "img" => {
-                formatdoc!(r#"<img class="img-center" src="{}"/>"#, self.value).to_string()
-            },
-            "math" => {
-                if let Ok(math) = katex::render(self.value.as_str()) {
-                    format!("{}", math)
-                } else {
-                    format!(r#"<p class="error">failed to render math equation: {}</p>"#, self.value)
-                }
-            },
-            "char" => {
-                if let Some(c) = self.value.chars().nth(0) {
-                    c.to_string()
-                } else {
-                    "".to_string()
-                }
-            },
-            "emoji" => {
-                let value = self.value.trim();
-                let mut emojis = String::new();
-                for name in value.split(";") {
-                    let name = name.trim();
-                    if let Some(emoji) = gh_emoji::get(name) {
-                        emojis.push_str(&emoji.to_string());
-                    } else {
-                        emojis.push_str(&format!(" {} ", name));
-                    }
-                }
-                emojis
-            },
-            "plot" => {
-                format!(r#"<div id="{}"></div>"#, self.value.len())
-            },
-            "sym" => {
-                let value = self.value.trim();
-                if let Some(c) = SYMBOLS.get(value.clone()) {
-                    c.to_string()
-                } else {
-                    format!(" {} ", value)
-                }
-            },
-            "a" => {
-                let value = self.value.trim();
-                format!(r#"<a href="{}">{}</a>"#, value, value)
-            },
-            "kbd" => {
-                let value = self.value.trim().split("+")
-                    .map(|key| {
-                        let key = if key.trim() == "cmd" {
-                            "⌘"
-                        } else {
-                            key.trim()
-                        };
-                        format!("<kbd>{}</kbd>", key)
-                    }).collect::<Vec<String>>();
-                format!(r#"{}"#, value.join("+"))
-            }
-            _ => {
-                self.value.clone()
-            }
-        }
     }
 }
