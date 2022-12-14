@@ -2,6 +2,7 @@
 
 ConciseMark is a simplified markdown parsing library written in Rust with customization, math supporting
 in mind. The `simplified` here means it only supports some common markdown syntax but not full.
+For Chinese introduction, please click [ConciseMark 中文介绍](https://zhqli.com/post/1670199332).
 
 ## Features
 
