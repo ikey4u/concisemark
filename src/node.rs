@@ -1,6 +1,4 @@
 //! AST tree
-use crate::token::Mark;
-use crate::{utils, render::latex};
 
 use std::collections::HashMap;
 use std::rc::{Weak, Rc};
@@ -65,13 +63,13 @@ impl Node {
         self.data.borrow().range.end - self.data.borrow().range.start
     }
 
-    pub fn transform<F>(&self, hook: &F)
+    pub fn transform<F, E>(&self, hook: &F)
     where
-        F: Fn(&Node)
+        F: Fn(&Node) -> Result<(), E>
     {
-        hook(&self);
+        _ = hook(&self);
         for child in self.children().iter() {
-            child.transform(hook);
+            _ = child.transform::<F, E>(hook);
         }
     }
 

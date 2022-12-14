@@ -116,7 +116,7 @@ impl Page {
     ///     std::fs::create_dir_all(draft_dir.as_path()).unwrap();
     ///
     ///     let page = Page::new(content);
-    ///     let hook = |node: &Node| {
+    ///     let hook = |node: &Node| -> Result<(), ()> {
     ///         let mut nodedata = node.data.borrow_mut();
     ///         if nodedata.tag.name == NodeTagName::Image {
     ///             let src = nodedata.tag.attrs.get("src").unwrap().to_owned();
@@ -129,6 +129,7 @@ impl Page {
     ///             }
     ///             nodedata.tag.attrs.insert("src".to_owned(), format!("{}", output_path.display()));
     ///         }
+    ///         Ok(())
     ///     };
     ///     page.transform(hook);
     ///
@@ -198,7 +199,10 @@ impl Page {
         render::html::generate(&self.ast, self.content.as_str(), Some(hook))
     }
 
-    /// Modify markdown AST node with hook
+    /// Modify markdown AST node with hook.
+    ///
+    /// The error status of the hook function (when returns an Err) will not stop the transform
+    /// process, instead it will print the error as a log message.
     ///
     /// The following is an exmaple to change image url
     ///
@@ -207,7 +211,7 @@ impl Page {
     ///
     ///     let content = "![imgs](/path/to/image.jpg)";
     ///     let page = Page::new(content);
-    ///     let hook = |node: &Node| {
+    ///     let hook = |node: &Node| -> Result<(), ()> {
     ///         let mut nodedata = node.data.borrow_mut();
     ///         if nodedata.tag.name == NodeTagName::Image {
     ///             let src = nodedata.tag.attrs.get("src").unwrap().to_owned();
@@ -218,17 +222,18 @@ impl Page {
     ///             };
     ///             nodedata.tag.attrs.insert("src".to_owned(), src);
     ///         }
+    ///         Ok(())
     ///     };
     ///     let img = &page.ast.children()[0].children()[0];
     ///     assert_eq!(img.data.borrow().tag.attrs.get("src").map(|s| s.as_str()), Some("/path/to/image.jpg"));
     ///     page.transform(hook);
     ///     assert_eq!(img.data.borrow().tag.attrs.get("src").map(|s| s.as_str()), Some("https://example.com/path/to/image.jpg"));
     ///
-    pub fn transform<F>(&self, hook: F)
+    pub fn transform<F, E>(&self, hook: F)
     where
-        F: Fn(&Node)
+        F: Fn(&Node) -> Result<(), E>
     {
-        self.ast.transform(&hook);
+        self.ast.transform::<F, E>(&hook)
     }
 }
 
@@ -418,7 +423,7 @@ mod tests {
         std::fs::create_dir_all(draft_dir.as_path()).unwrap();
 
         let page = Page::new(content);
-        let hook = |node: &Node| {
+        let hook = |node: &Node| -> Result<(), ()> {
             let mut nodedata = node.data.borrow_mut();
             if nodedata.tag.name == NodeTagName::Image {
                 let src = nodedata.tag.attrs.get("src").unwrap().to_owned();
@@ -431,6 +436,7 @@ mod tests {
                 }
                 nodedata.tag.attrs.insert("src".to_owned(), format!("{}", output_path.display()));
             }
+            Ok(())
         };
         page.transform(hook);
 
