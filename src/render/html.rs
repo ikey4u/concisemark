@@ -37,7 +37,8 @@ where
                 if line.is_empty() {
                     continue;
                 }
-                if &line[0..1] == ">" {
+                let ch = line.chars().next().unwrap();
+                if ch == '>' {
                     // if the first character of paragraph line is backquote character
                     // and it contains more text, this is case like following
                     //

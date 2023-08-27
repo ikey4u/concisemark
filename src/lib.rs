@@ -586,4 +586,25 @@ example
         let html = page.render();
         assert_eq!(html, wanted_html.trim());
     }
+
+    #[test]
+    fn test_backquote_unicode() {
+        let content = indoc! {r#"
+        这是摘要
+
+        >测试
+        >
+        > 再次测试
+        "#};
+        let wanted_html = indoc! {r#"
+        <div><p>这是摘要 </p><blockquote><p>测试 <br/>  再次测试 </p></blockquote></div>
+        "#};
+        let page = Page::new(content);
+        let html = page.render();
+        assert_eq!(html, wanted_html.trim());
+    }
+
+    #[test]
+    fn test_debug() {
+    }
 }
