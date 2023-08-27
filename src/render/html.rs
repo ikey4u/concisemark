@@ -33,10 +33,12 @@ where
         NodeTagName::Text => {
             let mut text = String::new();
             let line_count = bodystr.lines().count();
+            let mut previous_line_trimmed = false;
             for (i, line) in bodystr.lines().enumerate() {
                 if line.is_empty() {
                     continue;
                 }
+                let mut is_backquote_only_line = false;
                 let ch = line.chars().next().unwrap();
                 if ch == '>' {
                     // if the first character of paragraph line is backquote character
@@ -45,7 +47,7 @@ where
                     //     > some text
                     //
                     if line.trim() != ">" {
-                        text.push_str(&line[1..]);
+                        text.push_str(line[1..].trim());
                     } else {
                         // or else the line contains only a single `>` character such as
                         //
@@ -55,16 +57,37 @@ where
                         //
                         //     > *line*
                         //
-                        // we will only see `> `. should we put a <br/> here?
-                        // fortunatley, this case will always be the last line!
+                        // we will only see `> `, should we put a <br/> here?
+                        // fortunately, this case will always be the last line!
                         if i + 1 != line_count {
+                            is_backquote_only_line = true;
                             text.push_str("<br/>");
                         }
                     }
                 } else {
-                    text.push_str(line.trim_end());
+                    // see test `test_para_ending_whitesapce 1)`
+                    if previous_line_trimmed
+                        && (ch.is_ascii_alphanumeric()
+                            || ch.is_ascii_punctuation()
+                            || ch.is_ascii_whitespace())
+                    {
+                        text.push(' ');
+                    }
+                    text.push_str(line.trim());
                 }
-                text.push(' ');
+                // see test `test_para_ending_whitesapce 2)` and `test_backquote_unicode`
+                if let Some(ch) = line.trim_end().chars().last() {
+                    if (ch.is_ascii_alphanumeric()
+                        || ch.is_ascii_punctuation()
+                        || ch.is_ascii_whitespace())
+                        && (!is_backquote_only_line)
+                    {
+                        text.push(' ');
+                        previous_line_trimmed = false;
+                    } else {
+                        previous_line_trimmed = true;
+                    }
+                }
             }
             return text;
         }
@@ -125,7 +148,7 @@ where
                 Emphasis::Bold => "strong",
             };
             let body = utils::escape_to_html(bodystr.trim_matches('*'));
-            return format!(r#"<{tag}>{body}</{tag}>"#);
+            return format!(r#"<{tag}> {body} </{tag}>"#);
         }
         NodeTagName::Extension => {
             if let Some(value) = mark::generate(bodystr, RenderType::Html) {

@@ -407,7 +407,7 @@ mod tests {
         "#});
         let html = page.render();
         let displyed_math_html_in_list = indoc! {r#"
-            <div><ul><li>display mode math equation in list <p>    The follwoing is a display mode math equation </p><p> <span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">a^2 + b^2 = c^2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.9474em;vertical-align:-0.0833em;"></span><span class="mord"><span class="mord mathnormal">a</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8641em;"></span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8641em;"></span><span class="mord"><span class="mord mathnormal">c</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span></span></p></li></ul></div>
+            <div><ul><li>display mode math equation in list <p>The follwoing is a display mode math equation </p><p><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">a^2 + b^2 = c^2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.9474em;vertical-align:-0.0833em;"></span><span class="mord"><span class="mord mathnormal">a</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8641em;"></span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8641em;"></span><span class="mord"><span class="mord mathnormal">c</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span></span></p></li></ul></div>
         "#}.trim();
         assert_eq!(displyed_math_html_in_list.trim(), html.trim());
     }
@@ -526,7 +526,6 @@ example
             format!("{}", meta.date.format("%Y-%m-%d %H:%M:%S")),
             "2023-08-27 10:39:05"
         );
-        let html = page.render();
     }
 
     #[test]
@@ -537,9 +536,9 @@ example
         let page = Page::new(content);
         let html = page.render();
         let wanted_html = indoc! {r#"
-        <div><p>This is a sentence with emphasis <em>itaclics</em> and <strong>bold</strong>. </p></div>
-        "#}.trim();
-        assert_eq!(html, wanted_html);
+        <div><p>This is a sentence with emphasis <em> itaclics </em>and <strong> bold </strong>. </p></div>
+        "#};
+        assert_eq!(html, wanted_html.trim());
     }
 
     #[test]
@@ -552,7 +551,7 @@ example
         let page = Page::new(content);
         let html = page.render();
         let wanted_html = indoc! {r#"
-        <div><blockquote><p> a simple blockquote with very long body really long body ... </p></blockquote></div>
+        <div><blockquote><p>a simple blockquote with very long body really long body ... </p></blockquote></div>
         "#}.trim();
         assert_eq!(html, wanted_html);
 
@@ -563,7 +562,7 @@ example
         test
         "#};
         let wanted_html = indoc! {r#"
-        <div><blockquote><p> a simple line <br/>  line test </p></blockquote></div>
+        <div><blockquote><p>a simple line <br/>line test </p></blockquote></div>
         "#};
         let page = Page::new(content);
         let html = page.render();
@@ -580,7 +579,7 @@ example
         test
         "#};
         let wanted_html = indoc! {r#"
-        <div><blockquote><p> a simple line <br/>  abc  <strong>line</strong> <em>line</em>test </p></blockquote></div>
+        <div><blockquote><p>a simple line <br/>abc <strong> line </strong> <em> line </em>test </p></blockquote></div>
         "#};
         let page = Page::new(content);
         let html = page.render();
@@ -597,7 +596,7 @@ example
         > 再次测试
         "#};
         let wanted_html = indoc! {r#"
-        <div><p>这是摘要 </p><blockquote><p>测试 <br/>  再次测试 </p></blockquote></div>
+        <div><p>这是摘要</p><blockquote><p>测试<br/>再次测试</p></blockquote></div>
         "#};
         let page = Page::new(content);
         let html = page.render();
@@ -605,6 +604,34 @@ example
     }
 
     #[test]
-    fn test_debug() {
+    fn test_para_ending_whitesapce() {
+        // 1) require space between `2008 年` and `8 月 8 日`
+        let content = indoc! {r#"
+        北京奥运会开幕式时间为 2008 年
+        8 月 8 日
+        "#};
+        let wanted_html = indoc! {r#"
+        <div><p>北京奥运会开幕式时间为 2008 年 8 月 8 日</p></div>
+        "#};
+        let page = Page::new(content);
+        let html = page.render();
+        assert_eq!(html, wanted_html.trim());
+
+        // 2) require no space between `这是一段长` and `文本`, and
+        // no space between `这是一段引用` and `文本`
+        let content = indoc! {r#"
+        这是一段长
+        文本
+
+        > 这是一段引用
+        > 文本
+
+        "#};
+        let wanted_html = indoc! {r#"
+        <div><p>这是一段长文本</p><blockquote><p>这是一段引用文本</p></blockquote></div>
+        "#};
+        let page = Page::new(content);
+        let html = page.render();
+        assert_eq!(html, wanted_html.trim());
     }
 }
