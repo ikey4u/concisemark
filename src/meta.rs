@@ -1,7 +1,5 @@
-use serde::Serialize;
-use serde::Deserialize;
-use chrono::DateTime;
-use chrono::Utc;
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 /// You can put an optional html comment (whose body is in toml format) in the front of your markdown file
 /// ```text
@@ -45,11 +43,9 @@ impl Meta {
             return None;
         };
 
-        let meta_text = &text[
-            (start_index as usize + Self::META_START_MARK.len())
-            ..
-            (end_index - Self::META_END_MARK.len())
-        ];
+        let meta_text = &text[(start_index as usize
+            + Self::META_START_MARK.len())
+            ..(end_index - Self::META_END_MARK.len())];
         if let Ok(mut meta) = toml::from_str::<Meta>(&meta_text) {
             meta.size = end_index + 1;
             return Some(meta);
@@ -61,12 +57,15 @@ impl Meta {
 }
 
 mod serde_meta_date {
-    use chrono::{DateTime, Utc, TimeZone};
-    use serde::{self, Deserialize, Serializer, Deserializer};
+    use chrono::{DateTime, TimeZone, Utc};
+    use serde::{self, Deserialize, Deserializer, Serializer};
 
     const FORMAT: &'static str = "%Y-%m-%d %H:%M:%S";
 
-    pub fn serialize<S>(date: &DateTime<Utc>, serializer: S) -> Result<S::Ok, S::Error>
+    pub fn serialize<S>(
+        date: &DateTime<Utc>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -74,11 +73,14 @@ mod serde_meta_date {
         serializer.serialize_str(&s)
     }
 
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<DateTime<Utc>, D::Error>
+    pub fn deserialize<'de, D>(
+        deserializer: D,
+    ) -> Result<DateTime<Utc>, D::Error>
     where
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        Utc.datetime_from_str(&s, FORMAT).map_err(serde::de::Error::custom)
+        Utc.datetime_from_str(&s, FORMAT)
+            .map_err(serde::de::Error::custom)
     }
 }

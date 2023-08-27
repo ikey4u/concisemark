@@ -1,6 +1,10 @@
-use crate::meta::Meta;
-use crate::node::{Node, NodeTag, NodeTagName};
-use crate::token::{Token, Tokenizer, Paragraph, Heading, List, Codeblock, Mark, Pair, Link};
+use crate::{
+    meta::Meta,
+    node::{Node, NodeTag, NodeTagName},
+    token::{
+        Codeblock, Heading, Link, List, Mark, Pair, Paragraph, Token, Tokenizer,
+    },
+};
 
 pub struct Parser {
     content: String,
@@ -22,10 +26,7 @@ impl Parser {
             content.push('\n');
         }
 
-        Parser {
-            content,
-            meta,
-        }
+        Parser { content, meta }
     }
 
     /// Consume current paser and generate a parsed page
@@ -35,21 +36,24 @@ impl Parser {
         (self.meta, ast, self.content)
     }
 
-    fn parse_document(&self, root: NodeTag, pbase: usize, length: usize, indent: usize) -> Node {
+    fn parse_document(
+        &self,
+        root: NodeTag,
+        pbase: usize,
+        length: usize,
+        indent: usize,
+    ) -> Node {
         let root = Node::new(root, pbase..(pbase + length));
-        let tokenizer = Tokenizer::new(&self.content[pbase..(pbase + length)], indent);
+        let tokenizer =
+            Tokenizer::new(&self.content[pbase..(pbase + length)], indent);
         let mut pbase = pbase;
         for token in tokenizer {
             let node = match token {
                 Token::Paragraph(paragraph) => {
                     self.parse_paragraph(pbase, paragraph)
                 }
-                Token::Heading(heading) => {
-                    self.parse_heading(pbase, heading)
-                }
-                Token::List(list) => {
-                    self.parse_list(pbase, list)
-                }
+                Token::Heading(heading) => self.parse_heading(pbase, heading),
+                Token::List(list) => self.parse_list(pbase, list),
                 Token::Codeblock(codelock) => {
                     self.parse_codeblock(pbase, codelock)
                 }
@@ -64,7 +68,11 @@ impl Parser {
         root
     }
 
-    fn parse_statements<S: AsRef<str>>(&self, pbase: usize, text: S) -> Vec<Node> {
+    fn parse_statements<S: AsRef<str>>(
+        &self,
+        pbase: usize,
+        text: S,
+    ) -> Vec<Node> {
         let mut cursor = pbase;
         let text = text.as_ref();
         let mut nodes = vec![];
@@ -99,11 +107,13 @@ impl Parser {
                 ch @ '$' | ch @ '`' => {
                     if let Some(pair) = Pair::new(&chars[pos..], ch) {
                         if pos == 0 {
-                            let sz = pair.content.len() + pair.boundaries.len() * 2;
+                            let sz =
+                                pair.content.len() + pair.boundaries.len() * 2;
                             let tag = if ch == '$' {
                                 NodeTag::new(NodeTagName::Math)
                             } else {
-                                NodeTag::new(NodeTagName::Code).with_attr("inlined", "")
+                                NodeTag::new(NodeTagName::Code)
+                                    .with_attr("inlined", "")
                             };
                             return Node::new(tag, pbase..(pbase + sz));
                         } else {
@@ -166,26 +176,44 @@ impl Parser {
         let heading_level = match heading_size - heading_stmt.len() {
             0..=1 => 1,
             level @ 2..=6 => level,
-            _ => 6
+            _ => 6,
         };
-        let tag = NodeTag::new(NodeTagName::Heading).with_attr("level", heading_level.to_string());
+        let tag = NodeTag::new(NodeTagName::Heading)
+            .with_attr("level", heading_level.to_string());
         let node = Node::new(tag, pbase..(pbase + value.len()));
-        for subnode in self.parse_statements(pbase + (value.len() - heading_stmt.len()), heading_stmt) {
+        for subnode in self.parse_statements(
+            pbase + (value.len() - heading_stmt.len()),
+            heading_stmt,
+        ) {
             node.add(&subnode);
         }
         node
     }
 
     fn parse_list(&self, pbase: usize, list: List) -> Node {
-        let node = Node::new(NodeTag::new(NodeTagName::List), pbase..(pbase + list.prop.val.len()));
+        let node = Node::new(
+            NodeTag::new(NodeTagName::List),
+            pbase..(pbase + list.prop.val.len()),
+        );
         for item in list.iter() {
             let tag = NodeTag::new(NodeTagName::ListItem);
-            let list_node = Node::new(tag, (pbase + item.head.start)..(pbase + item.body.end));
+            let list_node = Node::new(
+                tag,
+                (pbase + item.head.start)..(pbase + item.body.end),
+            );
             let tag = NodeTag::new(NodeTagName::ListHead);
-            let head_node = Node::new(tag, (pbase + item.head.start)..(pbase + item.head.end));
-            let head_node_content = &self.content[(pbase + item.head.start)..(pbase + item.head.end)];
-            let list_indent = head_node_content.len() - head_node_content.trim_start().len();
-            for head_title_node in self.parse_statements(pbase + item.head.start + list_indent + 2, &head_node_content[(list_indent + 2)..]) {
+            let head_node = Node::new(
+                tag,
+                (pbase + item.head.start)..(pbase + item.head.end),
+            );
+            let head_node_content = &self.content
+                [(pbase + item.head.start)..(pbase + item.head.end)];
+            let list_indent =
+                head_node_content.len() - head_node_content.trim_start().len();
+            for head_title_node in self.parse_statements(
+                pbase + item.head.start + list_indent + 2,
+                &head_node_content[(list_indent + 2)..],
+            ) {
                 head_node.add(&head_title_node);
             }
             list_node.add(&head_node);
@@ -193,7 +221,12 @@ impl Parser {
             let list_body_base = pbase + item.body.start;
             let list_body_size = item.body.end - item.body.start;
             let list_body_indent = item.indent;
-            let body_node = self.parse_document(NodeTag::new(NodeTagName::ListBody), list_body_base, list_body_size, list_body_indent);
+            let body_node = self.parse_document(
+                NodeTag::new(NodeTagName::ListBody),
+                list_body_base,
+                list_body_size,
+                list_body_indent,
+            );
             list_node.add(&body_node);
 
             node.add(&list_node);

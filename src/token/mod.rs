@@ -1,23 +1,22 @@
 //! Rough tokens for markdown
-mod property;
-mod heading;
 mod codeblock;
+mod heading;
+mod link;
 mod list;
-mod paragraph;
 mod mark;
 mod pair;
-mod link;
+mod paragraph;
+mod property;
 
-pub use property::Property;
-pub use heading::Heading;
+use anyhow::{anyhow, Result};
 pub use codeblock::Codeblock;
+pub use heading::Heading;
+pub use link::Link;
 pub use list::List;
-pub use paragraph::Paragraph;
 pub use mark::Mark;
 pub use pair::Pair;
-pub use link::Link;
-
-use anyhow::{Result, anyhow};
+pub use paragraph::Paragraph;
+pub use property::Property;
 
 #[derive(Debug)]
 pub enum Token {
@@ -42,9 +41,16 @@ impl Token {
         let indentstr = " ".repeat(indent);
         if peekline.starts_with(&format!("{indentstr}{}", Heading::MARK)) {
             Ok(Token::Heading(Heading::new(&textlines)?))
-        } else if peekline.starts_with(&format!("{indentstr}{}", List::INDENT_MARK)) {
-            Ok(Token::Codeblock(Codeblock::new(&textlines, indentstr.len() + List::INDENT_MARK.len())?))
-        } else if peekline.starts_with(&format!("{indentstr}{}", List::LIST_MARK)) {
+        } else if peekline
+            .starts_with(&format!("{indentstr}{}", List::INDENT_MARK))
+        {
+            Ok(Token::Codeblock(Codeblock::new(
+                &textlines,
+                indentstr.len() + List::INDENT_MARK.len(),
+            )?))
+        } else if peekline
+            .starts_with(&format!("{indentstr}{}", List::LIST_MARK))
+        {
             Ok(Token::List(List::new(&textlines, indentstr.len())?))
         } else {
             Ok(Token::Paragraph(Paragraph::new(&textlines, indent)?))

@@ -1,10 +1,16 @@
-use crate::node::{Node, NodeTagName};
-use crate::utils;
-use super::{prettier, mark, RenderType};
+use super::{mark, prettier, RenderType};
+use crate::{
+    node::{Node, NodeTagName},
+    utils,
+};
 
-pub fn generate<S: AsRef<str>, F>(node: &Node, content: S, hook: Option<&F>) -> String
+pub fn generate<S: AsRef<str>, F>(
+    node: &Node,
+    content: S,
+    hook: Option<&F>,
+) -> String
 where
-    F: Fn(&Node) -> Option<String>
+    F: Fn(&Node) -> Option<String>,
 {
     if let Some(hook) = hook {
         if let Some(html) = hook(&node) {
@@ -27,23 +33,36 @@ where
         NodeTagName::Text => return bodystr.to_owned(),
         NodeTagName::Code => {
             if node.is_inlined(content) {
-                return format!("<code>{}</code>", utils::escape_to_html(bodystr.trim_matches(|c| c == '`').trim()));
+                return format!(
+                    "<code>{}</code>",
+                    utils::escape_to_html(
+                        bodystr.trim_matches(|c| c == '`').trim()
+                    )
+                );
             } else {
                 return format!(
                     "<pre><code>{}</pre></code>",
-                    utils::escape_to_html(prettier::remove_indent(bodystr).as_str())
+                    utils::escape_to_html(
+                        prettier::remove_indent(bodystr).as_str()
+                    )
                 );
             }
         }
         NodeTagName::Math => {
-            let opts = match katex::Opts::builder().display_mode(node.is_inlined(content)).build() {
+            let opts = match katex::Opts::builder()
+                .display_mode(node.is_inlined(content))
+                .build()
+            {
                 Ok(opts) => opts,
                 Err(e) => {
                     log::warn!("failed to create katex options: {e:?}");
                     return bodystr.to_owned();
                 }
             };
-            if let Ok(math) = katex::render_with_opts(bodystr.trim_matches(|x| x == '$'), &opts) {
+            if let Ok(math) = katex::render_with_opts(
+                bodystr.trim_matches(|x| x == '$'),
+                &opts,
+            ) {
                 return format!("{}", math);
             } else {
                 log::warn!("failed to render math equation: {}", bodystr);
@@ -68,7 +87,10 @@ where
                 return value;
             } else {
                 log::warn!("unsupported mark element: {}", bodystr);
-                return format!("<pre><code>{}</pre></code>", utils::escape_to_html(bodystr));
+                return format!(
+                    "<pre><code>{}</pre></code>",
+                    utils::escape_to_html(bodystr)
+                );
             }
         }
         _ => {}
@@ -77,17 +99,23 @@ where
     // Render all non-void element
     let markup = match nodedata.tag.name {
         NodeTagName::Heading => {
-            let level = match nodedata.tag.attrs.get("level").map(|s| s.as_str().parse::<usize>()) {
-                Some(Ok(level)) => {
-                    level
-                }
+            let level = match nodedata
+                .tag
+                .attrs
+                .get("level")
+                .map(|s| s.as_str().parse::<usize>())
+            {
+                Some(Ok(level)) => level,
                 _ => {
-                    log::warn!("heading level parse failed: {:?}, set it to level 1", nodedata.tag.attrs.get("level"));
+                    log::warn!(
+                        "heading level parse failed: {:?}, set it to level 1",
+                        nodedata.tag.attrs.get("level")
+                    );
                     1
                 }
             };
             Some(format!("h{level}"))
-        },
+        }
         NodeTagName::Section => Some("div".to_owned()),
         NodeTagName::Para => Some("p".to_owned()),
         NodeTagName::Code => Some("code".to_owned()),
@@ -95,7 +123,7 @@ where
         NodeTagName::Image => Some("img".to_owned()),
         NodeTagName::List => Some("ul".to_owned()),
         NodeTagName::ListItem => Some("li".to_owned()),
-        _ => None
+        _ => None,
     };
     let (start_tag, end_tag) = if let Some(mark) = markup {
         (format!("<{mark}>"), format!("</{mark}>"))

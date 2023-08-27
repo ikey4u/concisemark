@@ -11,19 +11,22 @@ impl Pair {
             return None;
         }
 
-        let boundaries: String = chars.iter()
+        let boundaries: String = chars
+            .iter()
             .take_while(|&&c| c == boundary)
-            .map(|_c| boundary).collect();
+            .map(|_c| boundary)
+            .collect();
         let content = chars[boundaries.len()..]
             .windows(boundaries.len())
-            .take_while(|chunk| {
-                chunk.iter().collect::<String>() != boundaries
-            })
+            .take_while(|chunk| chunk.iter().collect::<String>() != boundaries)
             .map(|chunk| chunk[0])
             .collect::<Vec<char>>();
 
         let consuemd_char_count = boundaries.len() + content.len();
-        let suffix = chars[consuemd_char_count..].iter().take(boundaries.len()).collect::<String>();
+        let suffix = chars[consuemd_char_count..]
+            .iter()
+            .take(boundaries.len())
+            .collect::<String>();
         if suffix != boundaries {
             return None;
         }
@@ -55,9 +58,23 @@ mod tests {
         assert!(pair.is_none());
 
         let pair = Pair::from_str("`inline code`", '`');
-        assert_eq!(pair, Some(Pair { content: "inline code".to_owned(), number_of_char: 13, boundaries: "`".to_owned() }));
+        assert_eq!(
+            pair,
+            Some(Pair {
+                content: "inline code".to_owned(),
+                number_of_char: 13,
+                boundaries: "`".to_owned()
+            })
+        );
 
         let pair = Pair::from_str("``$``", '`');
-        assert_eq!(pair, Some(Pair { content: "$".to_owned(), number_of_char: 5, boundaries: "``".to_owned() }));
+        assert_eq!(
+            pair,
+            Some(Pair {
+                content: "$".to_owned(),
+                number_of_char: 5,
+                boundaries: "``".to_owned()
+            })
+        );
     }
 }

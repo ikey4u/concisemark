@@ -1,6 +1,6 @@
-use super::Property;
-
 use anyhow::Result;
+
+use super::Property;
 
 #[derive(Debug)]
 pub struct Heading {
@@ -15,7 +15,7 @@ impl Heading {
         Ok(Self {
             prop: Property {
                 val: format!("{heading}\n"),
-            }
+            },
         })
     }
 }

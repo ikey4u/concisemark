@@ -1,8 +1,8 @@
 use std::ops::Range;
 
-use super::Property;
-
 use anyhow::Result;
+
+use super::Property;
 
 #[derive(Debug)]
 pub struct List {
@@ -29,20 +29,24 @@ impl List {
         let head_prefix = " ".repeat(indent) + Self::LIST_MARK;
         let head_multiple_line_prefix = " ".repeat(indent + 2);
         let body_prefix = " ".repeat(indent + 4);
-        let list = lines.iter().take_while(|line| {
-            if line.starts_with(&head_prefix)
-            || line.starts_with(&head_multiple_line_prefix)
-            || line.trim().len() == 0
-            || line.starts_with(&body_prefix) {
-                true
-            } else {
-                false
-            }
-        }).map(|&x| x).collect::<Vec<&str>>().join("\n");
+        let list = lines
+            .iter()
+            .take_while(|line| {
+                if line.starts_with(&head_prefix)
+                    || line.starts_with(&head_multiple_line_prefix)
+                    || line.trim().len() == 0
+                    || line.starts_with(&body_prefix)
+                {
+                    true
+                } else {
+                    false
+                }
+            })
+            .map(|&x| x)
+            .collect::<Vec<&str>>()
+            .join("\n");
         Ok(Self {
-            prop: Property {
-                val: list + "\n",
-            }
+            prop: Property { val: list + "\n" },
         })
     }
 
@@ -63,7 +67,10 @@ impl<'a> Iterator for ListIterator<'a> {
         let indent = if let Some(headline) = remained_content.lines().nth(0) {
             let trimed_head_line = headline.trim_start();
             if !trimed_head_line.starts_with(List::LIST_MARK) {
-                log::warn!("list does not start with list mark: [{}]", headline);
+                log::warn!(
+                    "list does not start with list mark: [{}]",
+                    headline
+                );
                 return None;
             }
             let indent = headline.len() - trimed_head_line.len();
@@ -81,45 +88,59 @@ impl<'a> Iterator for ListIterator<'a> {
         } else {
             " ".repeat(indent + 2)
         };
-        let headsz = remained_content.lines().enumerate().take_while(|(i, line)| {
-            if *i == 0 {
-                return true;
-            }
-            if !line.starts_with(headline_indentstr.as_str()) {
+        let headsz = remained_content
+            .lines()
+            .enumerate()
+            .take_while(|(i, line)| {
+                if *i == 0 {
+                    return true;
+                }
+                if !line.starts_with(headline_indentstr.as_str()) {
+                    return false;
+                }
+                // This is valid mutiple head lines
+                //
+                //     - list head
+                //       head line continued1...
+                //       head line continued2...
+                //
+                // but this is not
+                //
+                //     - list head
+                //        this continued head line does not align with the first line
+                //       ^
+                //
+                // this malformed line will stop the list.
+                //
+                if line.len() > headline_indentstr.len()
+                    && !line[headline_indentstr.len()..].starts_with(" ")
+                {
+                    return true;
+                }
                 return false;
-            }
-            // This is valid mutiple head lines
-            //
-            //     - list head
-            //       head line continued1...
-            //       head line continued2...
-            //
-            // but this is not
-            //
-            //     - list head
-            //        this continued head line does not align with the first line
-            //       ^
-            //
-            // this malformed line will stop the list.
-            //
-            if line.len() > headline_indentstr.len() && !line[headline_indentstr.len()..].starts_with(" ") {
-                return true;
-            }
-            return false;
-        })
-        // the `+ 1` means the newline character size
-        .map(|(_, line)| line.len() + 1)
-        .fold(0, |mut sum, val| { sum += val; sum });
+            })
+            // the `+ 1` means the newline character size
+            .map(|(_, line)| line.len() + 1)
+            .fold(0, |mut sum, val| {
+                sum += val;
+                sum
+            });
 
         let body_indentstr = if indent == 0 {
             " ".repeat(4)
         } else {
             " ".repeat(indent + 4)
         };
-        let bodysz = remained_content[headsz..].lines().take_while(|&line|
-            line.trim().len() == 0 || line.starts_with(&body_indentstr)
-        ).map(|line| line.len() + 1)
-        .fold(0, |mut sum, val| { sum += val; sum });
+        let bodysz = remained_content[headsz..]
+            .lines()
+            .take_while(|&line| {
+                line.trim().len() == 0 || line.starts_with(&body_indentstr)
+            })
+            .map(|line| line.len() + 1)
+            .fold(0, |mut sum, val| {
+                sum += val;
+                sum
+            });
 
         let item = ListItem {
             indent: body_indentstr.len(),

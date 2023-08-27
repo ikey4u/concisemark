@@ -26,10 +26,10 @@
 //!
 pub mod meta;
 pub mod node;
-pub mod token;
-pub mod utils;
 mod parser;
 mod render;
+pub mod token;
+pub mod utils;
 
 use meta::Meta;
 use node::Node;
@@ -37,8 +37,7 @@ use parser::Parser;
 
 /// A placehodler for future usage
 #[derive(Debug)]
-pub struct PageOptions {
-}
+pub struct PageOptions {}
 
 /// A markdown page
 pub struct Page {
@@ -84,9 +83,7 @@ impl Page {
     /// <div><h1>Title</h1></div>
     /// ```
     pub fn render(&self) -> String {
-        self.render_with_hook(&|_| {
-            None
-        })
+        self.render_with_hook(&|_| None)
     }
 
     /// Render markdown into XeLaTex source
@@ -172,18 +169,22 @@ impl Page {
         let mut page = include_str!("../assets/setup.tex").to_owned();
         let mut document = render::latex::Cmd::new("document").enclosed();
         if let Some(meta) = &self.meta {
-            let title = render::latex::Cmd::new("title").with_posarg(&meta.title);
+            let title =
+                render::latex::Cmd::new("title").with_posarg(&meta.title);
             document.append_cmd(&title);
             if let Some(authors) = &meta.authors {
-                let authors = render::latex::Cmd::new("author").with_posarg(authors.join(", "));
+                let authors = render::latex::Cmd::new("author")
+                    .with_posarg(authors.join(", "));
                 document.append_cmd(&authors);
             }
-            let date = render::latex::Cmd::new("date").with_posarg(&meta.date.to_string());
+            let date = render::latex::Cmd::new("date")
+                .with_posarg(&meta.date.to_string());
             document.append_cmd(&date);
             let maketitle = render::latex::Cmd::new("maketitle");
             document.append_cmd(&maketitle);
         }
-        document.append(render::latex::generate(&self.ast, self.content.as_str()));
+        document
+            .append(render::latex::generate(&self.ast, self.content.as_str()));
         page.push_str(&document.to_string());
         page
     }
@@ -194,7 +195,7 @@ impl Page {
     /// use the returned value as render result.
     pub fn render_with_hook<F>(&self, hook: &F) -> String
     where
-        F: Fn(&Node) -> Option<String>
+        F: Fn(&Node) -> Option<String>,
     {
         render::html::generate(&self.ast, self.content.as_str(), Some(hook))
     }
@@ -231,7 +232,7 @@ impl Page {
     ///
     pub fn transform<F, E>(&self, hook: F)
     where
-        F: Fn(&Node) -> Result<(), E>
+        F: Fn(&Node) -> Result<(), E>,
     {
         self.ast.transform::<F, E>(&hook)
     }
@@ -239,30 +240,26 @@ impl Page {
 
 #[cfg(test)]
 mod tests {
-    use std::fs::OpenOptions;
-    use std::io::Write;
-    use std::process::Command;
-    use std::{iter, env};
+    use std::{env, fs::OpenOptions, io::Write, iter, process::Command};
 
-    use crate::*;
+    use html5ever::{
+        driver::ParseOpts, local_name, namespace_url, ns, parse_fragment,
+        tendril::TendrilSink, tree_builder::TreeSink, QualName,
+    };
+    use indoc::indoc;
+    use markup5ever_rcdom::{Handle, NodeData, RcDom};
     use node::NodeTagName;
 
-    use indoc::indoc;
-    use html5ever::tree_builder::TreeSink;
-    use html5ever::QualName;
-    use html5ever::driver::ParseOpts;
-    use html5ever::{local_name, ns, namespace_url};
-    use html5ever::parse_fragment;
-    use markup5ever_rcdom::{Handle, NodeData, RcDom};
-    use html5ever::tendril::TendrilSink;
+    use crate::*;
 
     fn is_self_closing_tag(tag: &str) -> bool {
         let self_closing_tag_list = vec![
             // svg tags
-            "circle", "ellipse", "line", "path", "polygon", "polyline", "rect", "stop", "use",
-            // void tags
-            "area", "base", "br", "col", "command", "embed", "hr", "img", "input", "keygen", "link",
-            "meta", "param", "source", "track", "wbr",
+            "circle", "ellipse", "line", "path", "polygon", "polyline", "rect",
+            "stop", "use", // void tags
+            "area", "base", "br", "col", "command", "embed", "hr", "img",
+            "input", "keygen", "link", "meta", "param", "source", "track",
+            "wbr",
         ];
         if self_closing_tag_list.iter().any(|&i| i == tag) {
             true
@@ -273,21 +270,21 @@ mod tests {
 
     fn get_html_outline(dirty_html: &str) -> String {
         fn walker(indent: usize, node: &Handle) -> String {
-            let indentstr = format!("{}", iter::repeat(" ").take(indent).collect::<String>());
+            let indentstr = format!(
+                "{}",
+                iter::repeat(" ").take(indent).collect::<String>()
+            );
 
             let mut outline = indentstr.to_string();
             match node.data {
-                NodeData::Element {
-                    ref name,
-                    ..
-                } => {
+                NodeData::Element { ref name, .. } => {
                     if is_self_closing_tag(&name.local) {
                         outline += &format!("<{}", name.local);
                     } else {
                         outline += &format!("<{}>\n", name.local);
                     }
-                },
-                _ => {},
+                }
+                _ => {}
             }
 
             for child in node.children.borrow().iter() {
@@ -339,7 +336,15 @@ mod tests {
             let ast = page.ast.data.borrow();
             assert_eq!(ast.tag.name, NodeTagName::Section);
             assert_eq!(ast.children[0].borrow().tag.name, NodeTagName::Heading);
-            assert_eq!(ast.children[0].borrow().tag.attrs.get("level").map(|s| s.as_str()), Some(level));
+            assert_eq!(
+                ast.children[0]
+                    .borrow()
+                    .tag
+                    .attrs
+                    .get("level")
+                    .map(|s| s.as_str()),
+                Some(level)
+            );
         }
     }
 
@@ -356,7 +361,9 @@ mod tests {
         let page = Page::new(content);
         let html = page.render();
         let outline = get_html_outline(html.as_str());
-        assert_eq!(outline, indoc! {r#"
+        assert_eq!(
+            outline,
+            indoc! {r#"
             <div>
               <ul>
                 <li>
@@ -371,7 +378,8 @@ mod tests {
                 </li>
               </ul>
             </div>
-        "#});
+        "#}
+        );
     }
 
     #[test]
@@ -430,11 +438,19 @@ mod tests {
                 let name = nodedata.tag.attrs.get("name").unwrap().to_owned();
                 let output_path;
                 if src.starts_with("https://") || src.starts_with("http://") {
-                    output_path = utils::download_image_fs(src, draft_dir.as_path(), name).unwrap();
+                    output_path = utils::download_image_fs(
+                        src,
+                        draft_dir.as_path(),
+                        name,
+                    )
+                    .unwrap();
                 } else {
                     output_path = manifest_dir.join(src);
                 }
-                nodedata.tag.attrs.insert("src".to_owned(), format!("{}", output_path.display()));
+                nodedata.tag.attrs.insert(
+                    "src".to_owned(),
+                    format!("{}", output_path.display()),
+                );
             }
             Ok(())
         };
@@ -457,19 +473,35 @@ mod tests {
 
             \end{document}
         "#};
-        let wanted = wanted.replace(
-            "PLACEHOLDER_ONLINE",
-            &format!("{}", manifest_dir.join("draft").join("animal-online.jpg").display())
-        ).replace(
-            "PLACEHOLDER_OFFLINE",
-            &format!("{}", manifest_dir.join("assets").join("th.jpg").display())
-        );
+        let wanted = wanted
+            .replace(
+                "PLACEHOLDER_ONLINE",
+                &format!(
+                    "{}",
+                    manifest_dir
+                        .join("draft")
+                        .join("animal-online.jpg")
+                        .display()
+                ),
+            )
+            .replace(
+                "PLACEHOLDER_OFFLINE",
+                &format!(
+                    "{}",
+                    manifest_dir.join("assets").join("th.jpg").display()
+                ),
+            );
         let pagesrc = &page.render_latex()[setup.len()..];
         assert_eq!(wanted.trim(), pagesrc.trim());
 
         let latex = page.render_latex();
         let texfile = draft_dir.join("output.tex");
-        let mut f = OpenOptions::new().truncate(true).write(true).create(true).open(&texfile).unwrap();
+        let mut f = OpenOptions::new()
+            .truncate(true)
+            .write(true)
+            .create(true)
+            .open(&texfile)
+            .unwrap();
         f.write(latex.as_bytes()).unwrap();
         let mut cmd = Command::new("xelatex");
         cmd.current_dir(&draft_dir);

@@ -23,24 +23,26 @@ impl Mark {
         }
 
         let mut has_syntax_error = true;
-        let head: Vec<char> = chars.iter().take_while(|&&c| -> bool {
-            match c {
-                // allowed start mark char (I use hex to represent left brace since neovim cannot pair brace correctly)
-                '\x7b' | '\x28' | '\x3c' => {
-                    has_syntax_error = false;
-                    false
-                },
-                '\n' => {
-                    has_syntax_error = true;
-                    false
-                },
-                _ => {
-                    true
+        let head: Vec<char> = chars
+            .iter()
+            .take_while(|&&c| -> bool {
+                match c {
+                    // allowed start mark char (I use hex to represent left brace since neovim cannot pair brace correctly)
+                    '\x7b' | '\x28' | '\x3c' => {
+                        has_syntax_error = false;
+                        false
+                    }
+                    '\n' => {
+                        has_syntax_error = true;
+                        false
+                    }
+                    _ => true,
                 }
-            }
-        }).map(|&c| c).collect();
+            })
+            .map(|&c| c)
+            .collect();
         if has_syntax_error {
-            return None
+            return None;
         }
 
         let attrbeg = head.iter().position(|&c| c == '[');
@@ -50,10 +52,10 @@ impl Mark {
                 let tag = head[1..beg].iter().collect::<String>();
                 let attrs = head[beg + 1..end].iter().collect::<String>();
                 (tag, attrs)
-            },
+            }
             (None, None) => {
                 (head[1..].iter().collect::<String>(), "".to_string())
-            },
+            }
             _ => {
                 return None;
             }
@@ -62,34 +64,43 @@ impl Mark {
             return None;
         }
 
-        let (start_mark_char, end_mark_char) = if let Some(&c) = chars.get(head.len()) {
-            match c {
-                '\x7b' => ('{', '}'),
-                '\x28' => ('(', ')'),
-                '\x3c' => ('<', '>'),
-                _ => return None,
-            }
-        } else {
-            return None;
-        };
+        let (start_mark_char, end_mark_char) =
+            if let Some(&c) = chars.get(head.len()) {
+                match c {
+                    '\x7b' => ('{', '}'),
+                    '\x28' => ('(', ')'),
+                    '\x3c' => ('<', '>'),
+                    _ => return None,
+                }
+            } else {
+                return None;
+            };
 
-        let end_mark: String = chars[head.len()..].iter().take_while(|&&c| c == start_mark_char).map(|_c| end_mark_char).collect();
+        let end_mark: String = chars[head.len()..]
+            .iter()
+            .take_while(|&&c| c == start_mark_char)
+            .map(|_c| end_mark_char)
+            .collect();
         // no start mark
         if end_mark.len() <= 0 {
-            return None
+            return None;
         }
 
         has_syntax_error = true;
         // collect mark body (end_mark is always ASCII character, as a result, the char count
         // equlas byte count)
-        let body: Vec<char> = chars[head.len() + end_mark.len()..].windows(end_mark.len()).take_while(|chunk| -> bool {
-            if chunk.iter().collect::<String>() != end_mark {
-                true
-            } else {
-                has_syntax_error = false;
-                false
-            }
-        }).map(|chunk| chunk[0]).collect();
+        let body: Vec<char> = chars[head.len() + end_mark.len()..]
+            .windows(end_mark.len())
+            .take_while(|chunk| -> bool {
+                if chunk.iter().collect::<String>() != end_mark {
+                    true
+                } else {
+                    has_syntax_error = false;
+                    false
+                }
+            })
+            .map(|chunk| chunk[0])
+            .collect();
         if has_syntax_error {
             return None;
         }
@@ -99,7 +110,10 @@ impl Mark {
             name: tag.trim().to_string(),
             attrs: attrs.trim().to_string(),
             value: body.trim().to_string(),
-            size: head.iter().collect::<String>().len() + end_mark.len() + body.len() + end_mark.len(),
+            size: head.iter().collect::<String>().len()
+                + end_mark.len()
+                + body.len()
+                + end_mark.len(),
         })
     }
 }

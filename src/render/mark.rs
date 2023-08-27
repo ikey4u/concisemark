@@ -1,8 +1,5 @@
-use crate::token::Mark;
-use crate::utils;
-
 use super::RenderType;
-
+use crate::{token::Mark, utils};
 
 pub fn generate<S: AsRef<str>>(content: S, typ: RenderType) -> Option<String> {
     let content = content.as_ref();
@@ -11,13 +8,13 @@ pub fn generate<S: AsRef<str>>(content: S, typ: RenderType) -> Option<String> {
             "char" => {
                 if let Some(c) = mark.value.chars().nth(0) {
                     if typ == RenderType::Html {
-                        return Some(utils::escape_to_html(&c.to_string()))
+                        return Some(utils::escape_to_html(&c.to_string()));
                     } else {
-                        return Some(utils::escape_to_tex(&c.to_string()))
+                        return Some(utils::escape_to_tex(&c.to_string()));
                     }
                 }
                 return Some("".to_string());
-            },
+            }
             "emoji" => {
                 let value = mark.value.trim();
                 let mut emojis = String::new();
@@ -30,9 +27,12 @@ pub fn generate<S: AsRef<str>>(content: S, typ: RenderType) -> Option<String> {
                     }
                 }
                 return Some(emojis);
-            },
+            }
             "kbd" => {
-                let value = mark.value.trim().split("+")
+                let value = mark
+                    .value
+                    .trim()
+                    .split("+")
                     .map(|key| {
                         let key = if key.trim() == "cmd" {
                             "⌘"
@@ -44,7 +44,8 @@ pub fn generate<S: AsRef<str>>(content: S, typ: RenderType) -> Option<String> {
                         } else {
                             key.to_owned()
                         }
-                    }).collect::<Vec<String>>();
+                    })
+                    .collect::<Vec<String>>();
                 return Some(format!(r#"{}"#, value.join("+")));
             }
             _ => {

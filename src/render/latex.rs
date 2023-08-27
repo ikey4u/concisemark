@@ -2,14 +2,14 @@ use std::path::Path;
 
 use indoc::formatdoc;
 
+use super::{mark, prettier, RenderType};
 use crate::node::{Node, NodeTagName};
-use super::{prettier, mark, RenderType};
 
 #[derive(Debug)]
 pub struct Cmd {
     pub name: String,
     pub posargs: Vec<String>,
-    pub optargs:Vec<String>,
+    pub optargs: Vec<String>,
     pub body: String,
     pub is_enclosed: bool,
 }
@@ -98,7 +98,8 @@ pub fn generate<S: AsRef<str>>(node: &Node, content: S) -> String {
                 let bodystr = bodystr.trim_matches(|c| c == '`').trim();
                 return format!("\\verb|{bodystr}|");
             } else {
-                let mut texenv = Cmd::new("lstlisting").with_optarg("style=verb").enclosed();
+                let mut texenv =
+                    Cmd::new("lstlisting").with_optarg("style=verb").enclosed();
                 texenv.append(prettier::remove_indent(bodystr));
                 texenv.to_string()
             }
@@ -109,14 +110,15 @@ pub fn generate<S: AsRef<str>>(node: &Node, content: S) -> String {
             if name.len() == 0 {
                 name = url.clone();
             }
-            return Cmd::new("href").with_posarg(url).with_posarg(name).to_string();
+            return Cmd::new("href")
+                .with_posarg(url)
+                .with_posarg(name)
+                .to_string();
         }
         NodeTagName::List | NodeTagName::Section | NodeTagName::ListBody => {
             let mut texenv = match nodedata.tag.name {
-                NodeTagName::Section | NodeTagName::ListBody => {
-                    Cmd::new("")
-                }
-                _ => Cmd::new("itemize").enclosed()
+                NodeTagName::Section | NodeTagName::ListBody => Cmd::new(""),
+                _ => Cmd::new("itemize").enclosed(),
             };
             for child in node.children().iter() {
                 texenv.append(generate(child, content).as_str());
@@ -152,17 +154,26 @@ pub fn generate<S: AsRef<str>>(node: &Node, content: S) -> String {
                 "));
                 cmd.to_string()
             } else {
-                log::warn!("image path [{}] does not exist, ignored.", imgpath.display());
+                log::warn!(
+                    "image path [{}] does not exist, ignored.",
+                    imgpath.display()
+                );
                 "\n\n\\textbf{could not find image}\n\n".to_owned()
             }
         }
         NodeTagName::Heading => {
-            let level = match nodedata.tag.attrs.get("level").map(|s| s.as_str().parse::<usize>()) {
-                Some(Ok(level)) => {
-                    level
-                }
+            let level = match nodedata
+                .tag
+                .attrs
+                .get("level")
+                .map(|s| s.as_str().parse::<usize>())
+            {
+                Some(Ok(level)) => level,
                 _ => {
-                    log::warn!("heading level parse failed: {:?}, set it to level 1", nodedata.tag.attrs.get("level"));
+                    log::warn!(
+                        "heading level parse failed: {:?}, set it to level 1",
+                        nodedata.tag.attrs.get("level")
+                    );
                     1
                 }
             };

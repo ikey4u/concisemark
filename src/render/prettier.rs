@@ -8,12 +8,15 @@ pub fn remove_indent<S: AsRef<str>>(content: S) -> String {
             indent = current_indent;
         }
     }
-    let content = content.lines().map(|line| {
-        if line.len() > 0 {
-            &line[indent..]
-        } else {
-            line
-        }
-    }).collect::<Vec<&str>>();
+    let content = content
+        .lines()
+        .map(|line| {
+            if line.len() > 0 {
+                &line[indent..]
+            } else {
+                line
+            }
+        })
+        .collect::<Vec<&str>>();
     content.join("\n").trim().to_owned()
 }

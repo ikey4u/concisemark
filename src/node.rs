@@ -1,9 +1,11 @@
 //! AST tree
 
-use std::collections::HashMap;
-use std::rc::{Weak, Rc};
-use std::ops::Range;
-use std::cell::{Ref, RefCell};
+use std::{
+    cell::{Ref, RefCell},
+    collections::HashMap,
+    ops::Range,
+    rc::{Rc, Weak},
+};
 
 /// An AST node
 ///
@@ -35,7 +37,9 @@ impl Node {
             parent: Weak::new(),
             children: Vec::new(),
         };
-        Self { data: Rc::new(RefCell::new(data)) }
+        Self {
+            data: Rc::new(RefCell::new(data)),
+        }
     }
 
     pub fn rc(&self) -> Rc<RefCell<NodeData>> {
@@ -50,7 +54,9 @@ impl Node {
     pub fn children(&self) -> Vec<Node> {
         let mut children = vec![];
         for child in self.data.borrow().children.iter() {
-            children.push(Node { data: Rc::clone(&child) })
+            children.push(Node {
+                data: Rc::clone(&child),
+            })
         }
         children
     }
@@ -65,7 +71,7 @@ impl Node {
 
     pub fn transform<F, E>(&self, hook: &F)
     where
-        F: Fn(&Node) -> Result<(), E>
+        F: Fn(&Node) -> Result<(), E>,
     {
         _ = hook(&self);
         for child in self.children().iter() {
@@ -79,12 +85,13 @@ impl Node {
         match nodedata.tag.name {
             NodeTagName::Math => {
                 if let Some(parent) = &nodedata.parent.upgrade() {
-                    for child in parent.borrow()
-                        .children
-                        .iter()
-                        .filter(|node| node.borrow().tag.name != NodeTagName::Math)
+                    for child in
+                        parent.borrow().children.iter().filter(|node| {
+                            node.borrow().tag.name != NodeTagName::Math
+                        })
                     {
-                        let child_content = &content[child.borrow().range.start..child.borrow().range.end];
+                        let child_content = &content[child.borrow().range.start
+                            ..child.borrow().range.end];
                         if !child_content.chars().all(|x| x.is_whitespace()) {
                             return false;
                         }
@@ -92,13 +99,15 @@ impl Node {
                 }
                 true
             }
-            _ => {
-                return nodedata.tag.attrs.contains_key("inlined")
-            }
+            _ => return nodedata.tag.attrs.contains_key("inlined"),
         }
     }
 
-    pub fn get_attr_or<S1: AsRef<str>, S2: AsRef<str>>(&self, name: S1, def: S2) -> String {
+    pub fn get_attr_or<S1: AsRef<str>, S2: AsRef<str>>(
+        &self,
+        name: S1,
+        def: S2,
+    ) -> String {
         let nodedata = self.data.borrow();
         if let Some(value) = nodedata.tag.attrs.get(name.as_ref()) {
             value.to_owned()
@@ -139,8 +148,13 @@ impl NodeTag {
         }
     }
 
-    pub fn with_attr<S1: AsRef<str>, S2: AsRef<str>>(mut self, key: S1, val: S2) -> Self {
-        self.attrs.insert(key.as_ref().to_owned(), val.as_ref().to_owned());
+    pub fn with_attr<S1: AsRef<str>, S2: AsRef<str>>(
+        mut self,
+        key: S1,
+        val: S2,
+    ) -> Self {
+        self.attrs
+            .insert(key.as_ref().to_owned(), val.as_ref().to_owned());
         self
     }
 }
