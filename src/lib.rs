@@ -536,4 +536,18 @@ example
         let html = page.render();
         println!("{html}");
     }
+
+    #[test]
+    fn test_emphasis() {
+        let content = indoc! {r#"
+        This is a sentence with emphasis *itaclics* and **bold**.
+        "#};
+        let page = Page::new(content);
+        let html = page.render();
+        let wanted_html = indoc! {r#"
+        <div><p>This is a sentence with emphasis <em>itaclics</em> and <strong>bold</strong>.
+        </p></div>
+        "#}.trim();
+        assert_eq!(html, wanted_html);
+    }
 }

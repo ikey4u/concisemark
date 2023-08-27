@@ -1,6 +1,6 @@
 use super::{mark, prettier, RenderType};
 use crate::{
-    node::{Node, NodeTagName},
+    node::{Emphasis, Node, NodeTagName},
     utils,
 };
 
@@ -81,6 +81,14 @@ where
             let alt = node.get_attr_or("name", "image link is broken");
             let src = node.get_attr_or("src", "");
             return format!(r#"<img alt="{alt}" src="{src}"/>"#);
+        }
+        NodeTagName::Emphasis(t) => {
+            let tag = match t {
+                Emphasis::Italics => "em",
+                Emphasis::Bold => "strong",
+            };
+            let body = utils::escape_to_html(bodystr.trim_matches('*'));
+            return format!(r#"<{tag}>{body}</{tag}>"#);
         }
         NodeTagName::Extension => {
             if let Some(value) = mark::generate(bodystr, RenderType::Html) {

@@ -3,7 +3,7 @@ use std::path::Path;
 use indoc::formatdoc;
 
 use super::{mark, prettier, RenderType};
-use crate::node::{Node, NodeTagName};
+use crate::node::{Emphasis, Node, NodeTagName};
 
 #[derive(Debug)]
 pub struct Cmd {
@@ -79,6 +79,18 @@ pub fn generate<S: AsRef<str>>(node: &Node, content: S) -> String {
     let nodedata = node.data.borrow();
     let bodystr = &content[nodedata.range.start..nodedata.range.end];
     match nodedata.tag.name {
+        NodeTagName::Emphasis(typ) => {
+            // TODO: add unit test
+            let bodystr = bodystr.trim_matches('*');
+            match typ {
+                Emphasis::Italics => {
+                    format!(r#"\textit{{ {} }}"#, bodystr)
+                }
+                Emphasis::Bold => {
+                    format!(r#"\textbf{{ {} }}"#, bodystr)
+                }
+            }
+        }
         NodeTagName::Text => {
             return bodystr.to_owned();
         }

@@ -1,6 +1,6 @@
 use crate::{
     meta::Meta,
-    node::{Node, NodeTag, NodeTagName},
+    node::{Emphasis, Node, NodeTag, NodeTagName},
     token::{
         Codeblock, Heading, Link, List, Mark, Pair, Paragraph, Token, Tokenizer,
     },
@@ -36,8 +36,7 @@ impl Parser {
             0
         };
         let psize = self.content.len() - pbase;
-        let ast =
-            self.parse_document(tag, pbase, psize, 0);
+        let ast = self.parse_document(tag, pbase, psize, 0);
         (self.meta, ast, self.content)
     }
 
@@ -109,6 +108,26 @@ impl Parser {
                         peeked_text.push(chars[pos]);
                     }
                 }
+                ch @ '*' => {
+                    if let Some(pair) = Pair::new(&chars[pos..], ch) {
+                        if pos != 0 {
+                            break;
+                        }
+                        let bsz = pair.boundaries.len();
+                        if bsz <= 2 {
+                            let emphasis = if bsz == 1 {
+                                Emphasis::Italics
+                            } else {
+                                Emphasis::Bold
+                            };
+                            let tag =
+                                NodeTag::new(NodeTagName::Emphasis(emphasis));
+                            let sz = pair.content.len() + bsz * 2;
+                            return Node::new(tag, pbase..(pbase + sz));
+                        }
+                    }
+                    peeked_text.push(chars[pos]);
+                }
                 ch @ '$' | ch @ '`' => {
                     if let Some(pair) = Pair::new(&chars[pos..], ch) {
                         if pos == 0 {
@@ -122,7 +141,7 @@ impl Parser {
                             };
                             return Node::new(tag, pbase..(pbase + sz));
                         } else {
-                            // None zero position `pos` indicates that we have to stop collect
+                            // Non-zero position `pos` indicates that we have to stop collect
                             // `peeked_text` since we encounter another valid statement element.
                             break;
                         }

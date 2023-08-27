@@ -160,7 +160,15 @@ impl NodeTag {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
+pub enum Emphasis {
+    Italics,
+    Bold,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum NodeTagName {
+    /// Emphasis Itaclics
+    Emphasis(Emphasis),
     /// A title
     Heading,
     /// A seciton
