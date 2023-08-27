@@ -30,7 +30,43 @@ where
     // characters body as its value.
     //
     match nodedata.tag.name {
-        NodeTagName::Text => return bodystr.to_owned(),
+        NodeTagName::Text => {
+            let mut text = String::new();
+            let line_count = bodystr.lines().count();
+            for (i, line) in bodystr.lines().enumerate() {
+                if line.is_empty() {
+                    continue;
+                }
+                if &line[0..1] == ">" {
+                    // if the first character of paragraph line is backquote character
+                    // and it contains more text, this is case like following
+                    //
+                    //     > some text
+                    //
+                    if line.trim() != ">" {
+                        text.push_str(&line[1..]);
+                    } else {
+                        // or else the line contains only a single `>` character such as
+                        //
+                        //     >
+                        //
+                        // but if the original line is
+                        //
+                        //     > *line*
+                        //
+                        // we will only see `> `. should we put a <br/> here?
+                        // fortunatley, this case will always be the last line!
+                        if i + 1 != line_count {
+                            text.push_str("<br/>");
+                        }
+                    }
+                } else {
+                    text.push_str(line.trim_end());
+                }
+                text.push(' ');
+            }
+            return text;
+        }
         NodeTagName::Code => {
             if node.is_inlined(content) {
                 return format!(
@@ -134,7 +170,11 @@ where
         _ => None,
     };
     let (start_tag, end_tag) = if let Some(mark) = markup {
-        (format!("<{mark}>"), format!("</{mark}>"))
+        if nodedata.tag.name == NodeTagName::Para && bodystr.starts_with('>') {
+            ("<blockquote><p>".to_owned(), "</p></blockquote>".to_owned())
+        } else {
+            (format!("<{mark}>"), format!("</{mark}>"))
+        }
     } else {
         ("".to_owned(), "".to_owned())
     };
