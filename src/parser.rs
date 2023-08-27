@@ -14,25 +14,30 @@ pub struct Parser {
 impl Parser {
     /// Create a ConciseMarkdown parser from content
     pub fn new<S: AsRef<str>>(content: S) -> Self {
-        let meta = Meta::new(content.as_ref());
-        let mut content = if let Some(ref meta) = meta {
-            content.as_ref()[meta.size..].to_owned()
-        } else {
-            content.as_ref().to_owned()
-        };
+        let mut content = content.as_ref().to_owned();
 
         // parser requires the content ends with newline
-        if !content.ends_with("\n") {
+        if !content.ends_with('\n') {
             content.push('\n');
         }
 
-        Parser { content, meta }
+        Parser {
+            meta: Meta::new(content.as_str()),
+            content,
+        }
     }
 
     /// Consume current paser and generate a parsed page
     pub fn parse(self) -> (Option<Meta>, Node, String) {
         let tag = NodeTag::new(NodeTagName::Section);
-        let ast = self.parse_document(tag, 0, self.content.len(), 0);
+        let pbase = if let Some(meta) = &self.meta {
+            meta.size
+        } else {
+            0
+        };
+        let psize = self.content.len() - pbase;
+        let ast =
+            self.parse_document(tag, pbase, psize, 0);
         (self.meta, ast, self.content)
     }
 

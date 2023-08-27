@@ -508,4 +508,32 @@ mod tests {
         cmd.arg(&texfile);
         _ = cmd.output();
     }
+
+    #[test]
+    fn test_meta() {
+        let meta = r#"
+<!---
+title = "title"
+subtitle = "subtitle"
+date = "2023-08-27 10:39:05"
+authors = ["example <example@gmail>"]
+tags = []
+-->
+
+example
+
+"#;
+        let page = Page::new(meta);
+        println!("{:?}", page.meta);
+        assert!(page.meta.is_some());
+        let meta = page.meta.clone().unwrap();
+        assert_eq!(meta.title, "title");
+        assert_eq!(meta.subtitle, Some("subtitle".to_owned()));
+        assert_eq!(
+            format!("{}", meta.date.format("%Y-%m-%d %H:%M:%S")),
+            "2023-08-27 10:39:05"
+        );
+        let html = page.render();
+        println!("{html}");
+    }
 }

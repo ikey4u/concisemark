@@ -43,11 +43,11 @@ impl Meta {
             return None;
         };
 
-        let meta_text = &text[(start_index as usize
-            + Self::META_START_MARK.len())
-            ..(end_index - Self::META_END_MARK.len())];
-        if let Ok(mut meta) = toml::from_str::<Meta>(&meta_text) {
-            meta.size = end_index + 1;
+        let meta_start = start_index + Self::META_START_MARK.len();
+        let meta_end = end_index - Self::META_END_MARK.len();
+        let meta_text = &content[meta_start..meta_end];
+        if let Ok(mut meta) = toml::from_str::<Meta>(meta_text) {
+            meta.size = end_index;
             return Some(meta);
         } else {
             log::error!("failed to parse meta text: {meta_text}");
