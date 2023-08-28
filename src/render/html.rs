@@ -20,7 +20,8 @@ where
 
     let content = content.as_ref();
     let nodedata = node.data.borrow();
-    let bodystr = &content[nodedata.range.start..nodedata.range.end];
+    let body = &content[nodedata.range.start..nodedata.range.end];
+    let tagname = nodedata.tag.name;
 
     // Render all void tag.
     //
@@ -29,12 +30,13 @@ where
     // Note that ConciseMark extends this concept to denote a node that contains optional
     // characters body as its value.
     //
-    match nodedata.tag.name {
+    match tagname {
         NodeTagName::Text => {
             let mut text = String::new();
-            let line_count = bodystr.lines().count();
+            let line_count = body.lines().count();
             let mut previous_line_trimmed = false;
-            for (i, line) in bodystr.lines().enumerate() {
+            for (i, line) in body.lines().enumerate() {
+                let line = line.trim_start();
                 if line.is_empty() {
                     continue;
                 }
@@ -96,15 +98,13 @@ where
                 return format!(
                     "<code>{}</code>",
                     utils::escape_to_html(
-                        bodystr.trim_matches(|c| c == '`').trim()
+                        body.trim_matches(|c| c == '`').trim()
                     )
                 );
             } else {
                 return format!(
                     "<pre><code>{}</pre></code>",
-                    utils::escape_to_html(
-                        utils::remove_indent(bodystr).as_str()
-                    )
+                    utils::escape_to_html(utils::remove_indent(body).as_str())
                 );
             }
         }
@@ -116,17 +116,16 @@ where
                 Ok(opts) => opts,
                 Err(e) => {
                     log::warn!("failed to create katex options: {e:?}");
-                    return bodystr.to_owned();
+                    return body.to_owned();
                 }
             };
-            if let Ok(math) = katex::render_with_opts(
-                bodystr.trim_matches(|x| x == '$'),
-                &opts,
-            ) {
+            if let Ok(math) =
+                katex::render_with_opts(body.trim_matches(|x| x == '$'), &opts)
+            {
                 return format!("{}", math);
             } else {
-                log::warn!("failed to render math equation: {}", bodystr);
-                return bodystr.to_owned();
+                log::warn!("failed to render math equation: {}", body);
+                return body.to_owned();
             }
         }
         NodeTagName::Link => {
@@ -147,17 +146,17 @@ where
                 Emphasis::Italics => "em",
                 Emphasis::Bold => "strong",
             };
-            let body = utils::escape_to_html(bodystr.trim_matches('*'));
+            let body = utils::escape_to_html(body.trim_matches('*'));
             return format!(r#"<{tag}> {body} </{tag}>"#);
         }
         NodeTagName::Extension => {
-            if let Some(value) = mark::generate(bodystr, RenderType::Html) {
+            if let Some(value) = mark::generate(body, RenderType::Html) {
                 return value;
             } else {
-                log::warn!("unsupported mark element: {}", bodystr);
+                log::warn!("unsupported mark element: {}", body);
                 return format!(
                     "<pre><code>{}</pre></code>",
-                    utils::escape_to_html(bodystr)
+                    utils::escape_to_html(body)
                 );
             }
         }
@@ -165,7 +164,7 @@ where
     }
 
     // Render all non-void element
-    let markup = match nodedata.tag.name {
+    let markup = match tagname {
         NodeTagName::Heading => {
             let level = match nodedata
                 .tag
@@ -194,7 +193,7 @@ where
         _ => None,
     };
     let (start_tag, end_tag) = if let Some(mark) = markup {
-        if nodedata.tag.name == NodeTagName::Para && bodystr.starts_with('>') {
+        if tagname == NodeTagName::Para && body.trim_start().starts_with('>') {
             ("<blockquote><p>".to_owned(), "</p></blockquote>".to_owned())
         } else {
             (format!("<{mark}>"), format!("</{mark}>"))

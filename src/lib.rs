@@ -539,6 +539,12 @@ example
         <div><p>This is a sentence with emphasis <em> itaclics </em>and <strong> bold </strong>. </p></div>
         "#};
         assert_eq!(html, wanted_html.trim());
+
+        let content = include_str!("../testdata/emphasis_01.md");
+        let page = Page::new(content);
+        let html = page.render();
+        assert_eq!(html, include_str!("../testdata/emphasis_01.html").trim());
+        println!("{html}");
     }
 
     #[test]
@@ -567,6 +573,11 @@ example
         let page = Page::new(content);
         let html = page.render();
         assert_eq!(html, wanted_html.trim());
+
+        let content = include_str!("../testdata/backquote_01.md");
+        let page = Page::new(content);
+        let html = page.render();
+        assert_eq!(html, include_str!("../testdata/backquote_01.html").trim());
     }
 
     #[test]
