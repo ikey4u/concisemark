@@ -2,8 +2,8 @@ use std::path::Path;
 
 use indoc::formatdoc;
 
-use super::{mark, prettier, RenderType};
-use crate::node::{Emphasis, Node, NodeTagName};
+use super::{mark, RenderType};
+use crate::{node::{Emphasis, Node, NodeTagName}, utils};
 
 #[derive(Debug)]
 pub struct Cmd {
@@ -112,7 +112,7 @@ pub fn generate<S: AsRef<str>>(node: &Node, content: S) -> String {
             } else {
                 let mut texenv =
                     Cmd::new("lstlisting").with_optarg("style=verb").enclosed();
-                texenv.append(prettier::remove_indent(bodystr));
+                texenv.append(utils::remove_indent(bodystr));
                 texenv.to_string()
             }
         }

@@ -1,4 +1,4 @@
-use super::{mark, prettier, RenderType};
+use super::{mark, RenderType};
 use crate::{
     node::{Emphasis, Node, NodeTagName},
     utils,
@@ -103,7 +103,7 @@ where
                 return format!(
                     "<pre><code>{}</pre></code>",
                     utils::escape_to_html(
-                        prettier::remove_indent(bodystr).as_str()
+                        utils::remove_indent(bodystr).as_str()
                     )
                 );
             }
@@ -135,7 +135,7 @@ where
             if name.len() == 0 {
                 name = url.clone();
             }
-            return format!(r#"<a href="{}">{}</a>"#, url, name);
+            return format!(r#" <a href="{}">{}</a> "#, url, name);
         }
         NodeTagName::Image => {
             let alt = node.get_attr_or("name", "image link is broken");
