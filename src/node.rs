@@ -7,6 +7,20 @@ use std::{
     rc::{Rc, Weak},
 };
 
+pub fn find_nodes_by_tag(node: &Node, tag: NodeTagName) -> Vec<Node> {
+    let mut r = vec![];
+    for node in node.children() {
+        let nodedata = node.data.borrow();
+        if nodedata.tag.name == tag {
+            r.push(Node {
+                data: Rc::clone(&node.data),
+            });
+        }
+        r.extend(find_nodes_by_tag(&node, tag));
+    }
+    r
+}
+
 /// An AST node
 ///
 /// It seems impossible to use only one structure to implement feature that
@@ -79,21 +93,26 @@ impl Node {
         }
     }
 
-    pub fn is_inlined<S: AsRef<str>>(&self, _content: S) -> bool {
+    pub fn is_inlined<S: AsRef<str>>(&self, content: S) -> bool {
         let nodedata = self.data.borrow();
+        let content = content.as_ref();
         match nodedata.tag.name {
             NodeTagName::Math => {
                 if let Some(parent) = &nodedata.parent.upgrade() {
-                    let child_count = parent
-                        .borrow()
-                        .children
-                        .iter()
-                        .filter(|node| {
+                    // If we have a math node, we check if all its non-math sibling nodes are empty
+                    // (containing whitespace only). If it does, returns `display` mode or
+                    // else `inline` mode.
+                    for child in
+                        parent.borrow().children.iter().filter(|&node| {
                             node.borrow().tag.name != NodeTagName::Math
                         })
-                        .count();
-                    if child_count > 1 {
-                        return true;
+                    {
+                        let s = child.borrow().range.start;
+                        let e = child.borrow().range.end;
+                        let child_content = &content[s..e];
+                        if !child_content.chars().all(|x| x.is_whitespace()) {
+                            return true;
+                        }
                     }
                 }
                 false

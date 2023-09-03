@@ -615,4 +615,22 @@ example
         let html = page.render();
         assert_eq!(html, wanted_html.trim());
     }
+
+    #[test]
+    fn test_math_mode() {
+        let content = indoc! {r#"
+        - Math Text
+
+            This is inline mode math equation $a^2$, but this is display mode
+
+            $a^2 + b^2$
+
+            blabla ...
+        "#};
+        let page = Page::new(content);
+        let nodes = node::find_nodes_by_tag(&page.ast, node::NodeTagName::Math);
+        assert_eq!(nodes.len(), 2);
+        assert!(nodes[0].is_inlined(content));
+        assert!(!nodes[1].is_inlined(content));
+    }
 }

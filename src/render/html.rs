@@ -119,7 +119,7 @@ where
         NodeTagName::Link => {
             let url = node.get_attr_or("href", "");
             let mut name = node.get_attr_or("name", url.as_str());
-            if name.len() == 0 {
+            if name.is_empty() {
                 name = url.clone();
             }
             return format!(r#" <a href="{}">{}</a> "#, url, name);
