@@ -63,18 +63,24 @@ For Chinese introduction, please click [ConciseMark 中文介绍](https://zhqli.
         Use backtick (`) pair to show inline mode code.
 
         Indent your code in a new paragraph with indention more than
-        four spaces than your current indention, then it will be dispaly mode. 
+        four spaces than your current indention, then it will be dispaly mode.
 
 - Extension
 
     - Math
 
-        Math in HTML is supported by [katex](https://katex.org/)), use one
-        syntax such as `$a^2 + b^2$` to write math equation.
+        Math in HTML is supported by [katex](https://katex.org/) or
+        [mathjax](https://www.mathjax.org/), use one syntax such as
+        `$a^2 + b^2$` to write math equation.
 
-        If `$a^2 + b^2` is in paragraph, then it will be inline mode.
+        If `$a^2 + b^2$` is in paragraph, then it will be inline mode
+        (generated text will be `$a^2 + b^2$`).
 
-        If `$a^2 + b^2` holds the full paragraph, then it will be display mode.
+        If `$a^2 + b^2$` holds the full paragraph, then it will be display mode
+        (rendered text will be `$$a^2 + b^2$$`).
+
+        Note that this library does not bundle katex or mathjax,
+        you must import katex or mathjax in your generated html file.
 
     - Latex PDF Generation
 

@@ -79,27 +79,26 @@ impl Node {
         }
     }
 
-    pub fn is_inlined<S: AsRef<str>>(&self, content: S) -> bool {
-        let content = content.as_ref();
+    pub fn is_inlined<S: AsRef<str>>(&self, _content: S) -> bool {
         let nodedata = self.data.borrow();
         match nodedata.tag.name {
             NodeTagName::Math => {
                 if let Some(parent) = &nodedata.parent.upgrade() {
-                    for child in
-                        parent.borrow().children.iter().filter(|node| {
+                    let child_count = parent
+                        .borrow()
+                        .children
+                        .iter()
+                        .filter(|node| {
                             node.borrow().tag.name != NodeTagName::Math
                         })
-                    {
-                        let child_content = &content[child.borrow().range.start
-                            ..child.borrow().range.end];
-                        if !child_content.chars().all(|x| x.is_whitespace()) {
-                            return false;
-                        }
+                        .count();
+                    if child_count > 1 {
+                        return true;
                     }
                 }
-                true
+                false
             }
-            _ => return nodedata.tag.attrs.contains_key("inlined"),
+            _ => nodedata.tag.attrs.contains_key("inlined"),
         }
     }
 

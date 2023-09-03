@@ -109,23 +109,11 @@ where
             }
         }
         NodeTagName::Math => {
-            let opts = match katex::Opts::builder()
-                .display_mode(node.is_inlined(content))
-                .build()
-            {
-                Ok(opts) => opts,
-                Err(e) => {
-                    log::warn!("failed to create katex options: {e:?}");
-                    return body.to_owned();
-                }
-            };
-            if let Ok(math) =
-                katex::render_with_opts(body.trim_matches(|x| x == '$'), &opts)
-            {
-                return format!("{}", math);
+            let body = body.trim_matches(|x| x == '$');
+            if node.is_inlined(content) {
+                return format!("${body}$");
             } else {
-                log::warn!("failed to render math equation: {}", body);
-                return body.to_owned();
+                return format!("$${body}$$");
             }
         }
         NodeTagName::Link => {
