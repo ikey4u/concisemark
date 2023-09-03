@@ -50,6 +50,7 @@ impl Node {
             content_range: range.start..range.end,
             parent: Weak::new(),
             children: Vec::new(),
+            index: None,
         };
         Self {
             data: Rc::new(RefCell::new(data)),
@@ -60,7 +61,27 @@ impl Node {
         Rc::clone(&self.data)
     }
 
+    pub fn set_index(&self, index: usize) {
+        self.data.borrow_mut().index = Some(index);
+    }
+
+    pub fn get_index(&self) -> Option<usize> {
+        self.data.borrow().index
+    }
+
+    pub fn is_last(&self) -> bool {
+        if let Some(parent) = &self.data.borrow().parent.upgrade() {
+            if let Some(index) = self.get_index() {
+                if index + 1 == parent.borrow().children.len() {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
     pub fn add(&self, node: &Node) {
+        node.set_index(self.data.borrow_mut().children.len());
         self.data.borrow_mut().children.push(node.rc());
         node.data.borrow_mut().parent = Rc::downgrade(&self.rc());
     }
@@ -147,6 +168,8 @@ pub struct NodeData {
     // The parent of this node. Use `Weak` to avoid recycle references.
     pub parent: Weak<RefCell<NodeData>>,
     pub children: Vec<Rc<RefCell<NodeData>>>,
+    // The index of this node in its parent
+    pub index: Option<usize>,
 }
 
 /// Meta information for [`Node`]
