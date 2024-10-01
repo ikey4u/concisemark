@@ -13,17 +13,12 @@ impl Codeblock {
             .iter()
             .take_while(|line| {
                 let indent = line.len() - line.trim_start().len();
-                if indent >= minindent || line.trim().len() == 0 {
-                    true
-                } else {
-                    false
-                }
+                indent >= minindent || line.trim().is_empty()
             })
-            .map(|&x| x)
-            .collect::<Vec<&str>>()
-            .join("\n");
+            .copied()
+            .collect::<String>();
         Ok(Self {
-            prop: Property { val: code + "\n" },
+            prop: Property { val: code },
         })
     }
 }

@@ -1,11 +1,11 @@
 [package]
 name = "concisemark"
-version = "0.3.2"
+version = "0.4.0"
 edition = "2021"
 authors = ["zhq <pwnkeeper@gmail.com>"]
 description = "A simplified markdown parsing library"
 homepage = "https://github.com/ikey4u/concisemark"
-documentation = "https://docs.rs/concisemark/0.3.1/concisemark"
+documentation = "https://docs.rs/concisemark/0.4.0/concisemark"
 repository = "https://github.com/ikey4u/concisemark"
 license = "MIT"
 readme = "README.md"
@@ -30,3 +30,6 @@ getrandom = { version = "0.2.14", features = ["js"] }
 [dev-dependencies]
 html5ever = "0.26.0"
 markup5ever_rcdom = "0.2.0"
+
+[profile.dev]
+debug = true

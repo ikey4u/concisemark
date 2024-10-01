@@ -26,8 +26,8 @@ pub struct Meta {
 }
 
 impl Meta {
-    const META_START_MARK: &str = "<!---\n";
-    const META_END_MARK: &str = "-->\n";
+    const META_START_MARK: &'static str = "<!---\n";
+    const META_END_MARK: &'static str = "-->\n";
 
     pub fn new<S: AsRef<str>>(content: S) -> Option<Self> {
         let content = content.as_ref();
@@ -60,7 +60,7 @@ mod serde_meta_date {
     use chrono::{DateTime, TimeZone, Utc};
     use serde::{self, Deserialize, Deserializer, Serializer};
 
-    const FORMAT: &'static str = "%Y-%m-%d %H:%M:%S";
+    const FORMAT: &str = "%Y-%m-%d %H:%M:%S";
 
     pub fn serialize<S>(
         date: &DateTime<Utc>,

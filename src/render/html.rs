@@ -13,7 +13,7 @@ where
     F: Fn(&Node) -> Option<String>,
 {
     if let Some(hook) = hook {
-        if let Some(html) = hook(&node) {
+        if let Some(html) = hook(node) {
             return html;
         }
     }
@@ -192,7 +192,11 @@ where
 
     let mut html = String::new();
     html += &start_tag;
-    for child in node.children().iter() {
+    for child in node.children().iter().filter(|x| {
+        let (start, end) =
+            (x.data.borrow().range.start, x.data.borrow().range.end);
+        !content[start..end].trim().is_empty()
+    }) {
         html.push_str(generate(child, content, hook).as_str());
     }
     html += &end_tag;

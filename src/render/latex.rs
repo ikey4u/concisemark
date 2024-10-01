@@ -1,9 +1,12 @@
-use std::path::Path;
+use std::{path::Path};
 
 use indoc::formatdoc;
 
 use super::{mark, RenderType};
-use crate::{node::{Emphasis, Node, NodeTagName}, utils};
+use crate::{
+    node::{Emphasis, Node, NodeTagName},
+    utils,
+};
 
 #[derive(Debug)]
 pub struct Cmd {
@@ -49,8 +52,8 @@ impl Cmd {
     }
 
     pub fn to_string(&self) -> String {
-        if self.name == "" {
-            return self.body.clone();
+        if self.name.is_empty() {
+            return self.body.to_owned();
         }
 
         let mut content = if self.is_enclosed {
@@ -66,9 +69,9 @@ impl Cmd {
         }
         content.push('\n');
         if self.is_enclosed {
-            content.push_str(&self.body);
-            content.push_str(&format!(r#"\end{{{}}}"#, self.name));
+            content.push_str(self.body.trim());
             content.push('\n');
+            content.push_str(&format!(r#"\end{{{}}}"#, self.name));
         }
         content
     }
@@ -91,24 +94,20 @@ pub fn generate<S: AsRef<str>>(node: &Node, content: S) -> String {
                 }
             }
         }
-        NodeTagName::Text => {
-            return bodystr.to_owned();
-        }
-        NodeTagName::BlankLine => {
-            return "".to_owned();
-        }
+        NodeTagName::Text => bodystr.to_owned(),
+        NodeTagName::BlankLine => "".to_owned(),
         NodeTagName::Math => {
             let bodystr = bodystr.trim_matches(|x| x == '$').trim();
             if node.is_inlined(content) {
-                return format!("$${bodystr}$$");
+                format!("$${bodystr}$$")
             } else {
-                return format!("${bodystr}$");
+                format!("${bodystr}$")
             }
         }
         NodeTagName::Code => {
             if node.is_inlined(content) {
                 let bodystr = bodystr.trim_matches(|c| c == '`').trim();
-                return format!("\\verb|{bodystr}|");
+                format!("\\verb|{bodystr}|")
             } else {
                 let mut texenv =
                     Cmd::new("lstlisting").with_optarg("style=verb").enclosed();
@@ -119,13 +118,13 @@ pub fn generate<S: AsRef<str>>(node: &Node, content: S) -> String {
         NodeTagName::Link => {
             let url = node.get_attr_or("href", "");
             let mut name = node.get_attr_or("name", url.as_str());
-            if name.len() == 0 {
+            if name.is_empty() {
                 name = url.clone();
             }
-            return Cmd::new("href")
+            Cmd::new("href")
                 .with_posarg(url)
                 .with_posarg(name)
-                .to_string();
+                .to_string()
         }
         NodeTagName::List | NodeTagName::Section | NodeTagName::ListBody => {
             let mut texenv = match nodedata.tag.name {
@@ -135,24 +134,28 @@ pub fn generate<S: AsRef<str>>(node: &Node, content: S) -> String {
             for child in node.children().iter() {
                 texenv.append(generate(child, content).as_str());
             }
-            return texenv.to_string();
+            texenv.to_string()
         }
         NodeTagName::ListItem => {
             let mut text = Cmd::new("item").to_string();
             for child in node.children().iter() {
                 text.push_str(generate(child, content).as_str());
             }
-            return text;
+            text
         }
         NodeTagName::ListHead | NodeTagName::Para => {
             let mut text = String::new();
             if nodedata.tag.name == NodeTagName::Para {
                 text.push('\n');
             }
-            for child in node.children().iter() {
+            for child in node.children().iter().filter(|x| {
+                let (start, end) =
+                    (x.data.borrow().range.start, x.data.borrow().range.end);
+                !content[start..end].trim().is_empty()
+            }) {
                 text.push_str(generate(child, content).as_str());
             }
-            return text.to_owned();
+            text.to_owned()
         }
         NodeTagName::Image => {
             let alt = node.get_attr_or("name", "image link is broken");
@@ -164,7 +167,7 @@ pub fn generate<S: AsRef<str>>(node: &Node, content: S) -> String {
                     \\centerline{{\\includegraphics[width=0.7\\textwidth]{{{src}}}}}
                     \\caption{{{alt}}}
                 "));
-                cmd.to_string()
+                cmd.to_string().to_owned()
             } else {
                 log::warn!(
                     "image path [{}] does not exist, ignored.",
@@ -202,10 +205,10 @@ pub fn generate<S: AsRef<str>>(node: &Node, content: S) -> String {
         }
         NodeTagName::Extension => {
             if let Some(value) = mark::generate(bodystr, RenderType::Latex) {
-                return value;
+                value
             } else {
                 log::warn!("unsupported mark element: {}", bodystr);
-                return format!("{bodystr}");
+                bodystr.to_string()
             }
         }
     }

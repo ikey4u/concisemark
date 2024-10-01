@@ -46,14 +46,28 @@ impl Node {
         let data = NodeData {
             tag,
             range: range.start..range.end,
-            // TODO: a temporary hack...
-            content_range: range.start..range.end,
             parent: Weak::new(),
             children: Vec::new(),
             index: None,
         };
         Self {
             data: Rc::new(RefCell::new(data)),
+        }
+    }
+
+    pub fn dump(&self, indent: usize, content: Option<&str>) {
+        let children = self.children();
+        let tag = &self.data.borrow().tag;
+        let range = &self.data.borrow().range;
+        let text = if let Some(content) = content {
+            &content[range.start..range.end]
+        } else {
+            ""
+        };
+        let indent_str = " ".repeat(indent * 4);
+        println!("{indent_str}[{:?} ({range:?})] = [{text}]", tag.name);
+        for child in children {
+            child.dump(indent + 1, content);
         }
     }
 
@@ -90,7 +104,7 @@ impl Node {
         let mut children = vec![];
         for child in self.data.borrow().children.iter() {
             children.push(Node {
-                data: Rc::clone(&child),
+                data: Rc::clone(child),
             })
         }
         children
@@ -108,9 +122,9 @@ impl Node {
     where
         F: Fn(&Node) -> Result<(), E>,
     {
-        _ = hook(&self);
+        _ = hook(self);
         for child in self.children().iter() {
-            _ = child.transform::<F, E>(hook);
+            child.transform::<F, E>(hook);
         }
     }
 
@@ -163,8 +177,6 @@ pub struct NodeData {
     // The full range of this node. Note that we do not store node text directly but rather a cheap
     // range which can be used to index into markdown text
     pub range: Range<usize>,
-    // The content range of this node
-    pub content_range: Range<usize>,
     // The parent of this node. Use `Weak` to avoid recycle references.
     pub parent: Weak<RefCell<NodeData>>,
     pub children: Vec<Rc<RefCell<NodeData>>>,

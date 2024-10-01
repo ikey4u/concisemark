@@ -23,8 +23,8 @@ pub struct ListItem {
 }
 
 impl List {
-    pub const LIST_MARK: &str = "- ";
-    pub const INDENT_MARK: &str = "    ";
+    pub const LIST_MARK: &'static str = "- ";
+    pub const INDENT_MARK: &'static str = "    ";
     pub fn new(lines: &[&str], indent: usize) -> Result<Self> {
         let head_prefix = " ".repeat(indent) + Self::LIST_MARK;
         let head_multiple_line_prefix = " ".repeat(indent + 2);
@@ -32,21 +32,15 @@ impl List {
         let list = lines
             .iter()
             .take_while(|line| {
-                if line.starts_with(&head_prefix)
+                line.starts_with(&head_prefix)
                     || line.starts_with(&head_multiple_line_prefix)
-                    || line.trim().len() == 0
+                    || line.trim().is_empty()
                     || line.starts_with(&body_prefix)
-                {
-                    true
-                } else {
-                    false
-                }
             })
-            .map(|&x| x)
-            .collect::<Vec<&str>>()
-            .join("\n");
+            .copied()
+            .collect::<String>();
         Ok(Self {
-            prop: Property { val: list + "\n" },
+            prop: Property { val: list },
         })
     }
 
@@ -64,7 +58,9 @@ impl<'a> Iterator for ListIterator<'a> {
         }
 
         let remained_content = &content[self.pos..];
-        let indent = if let Some(headline) = remained_content.lines().nth(0) {
+        let indent = if let Some(headline) =
+            remained_content.split_inclusive("\n").nth(0)
+        {
             let trimed_head_line = headline.trim_start();
             if !trimed_head_line.starts_with(List::LIST_MARK) {
                 log::warn!(
@@ -89,7 +85,7 @@ impl<'a> Iterator for ListIterator<'a> {
             " ".repeat(indent + 2)
         };
         let headsz = remained_content
-            .lines()
+            .split_inclusive("\n")
             .enumerate()
             .take_while(|(i, line)| {
                 if *i == 0 {
@@ -117,10 +113,10 @@ impl<'a> Iterator for ListIterator<'a> {
                 {
                     return true;
                 }
-                return false;
+                false
             })
             // the `+ 1` means the newline character size
-            .map(|(_, line)| line.len() + 1)
+            .map(|(_, line)| line.len())
             .fold(0, |mut sum, val| {
                 sum += val;
                 sum
@@ -132,11 +128,11 @@ impl<'a> Iterator for ListIterator<'a> {
             " ".repeat(indent + 4)
         };
         let bodysz = remained_content[headsz..]
-            .lines()
+            .split_inclusive("\n")
             .take_while(|&line| {
-                line.trim().len() == 0 || line.starts_with(&body_indentstr)
+                line.trim().is_empty() || line.starts_with(&body_indentstr)
             })
-            .map(|line| line.len() + 1)
+            .map(|line| line.len())
             .fold(0, |mut sum, val| {
                 sum += val;
                 sum

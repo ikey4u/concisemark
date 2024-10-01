@@ -80,10 +80,10 @@ where
             .create(true)
             .open(&output_path)
             .ok()?;
-        f.write(&data[..]).ok()?;
+        f.write_all(&data[..]).ok()?;
         Some(output_path)
     } else {
-        return None;
+        None
     }
 }
 
@@ -91,7 +91,7 @@ where
 pub fn download_image<S: AsRef<str>>(url: S) -> Option<(String, Vec<u8>)> {
     let url = url.as_ref();
     let mut data: Vec<u8> = vec![];
-    match ureq::get(url.as_ref()).call() {
+    match ureq::get(url).call() {
         Ok(resp) => {
             let content_type = resp.content_type().to_owned();
             // max size is limited to 10MB
@@ -101,13 +101,13 @@ pub fn download_image<S: AsRef<str>>(url: S) -> Option<(String, Vec<u8>)> {
                 // TODO: better error handling
                 log::error!("failed to read media data into buffer: {e:?}");
             }
-            return Some((content_type, data));
+            Some((content_type, data))
         }
         Err(e) => {
             println!("error: {e:?} ==> {url}");
             // TODO: better error handling
             log::error!("failed to download media {} with error {e:?}", url);
-            return None;
+            None
         }
     }
 }
@@ -116,21 +116,21 @@ pub fn download_image<S: AsRef<str>>(url: S) -> Option<(String, Vec<u8>)> {
 pub fn remove_indent<S: AsRef<str>>(content: S) -> String {
     let content = content.as_ref();
     let mut indent = content.len();
-    for line in content.lines().filter(|line| line.len() > 0) {
+    for line in content.lines().filter(|line| !line.is_empty()) {
         let current_indent = line.len() - line.trim().len();
         if current_indent < indent {
             indent = current_indent;
         }
     }
     let content = content
-        .lines()
+        .split_inclusive("\n")
         .map(|line| {
-            if line.len() > 0 {
+            if !line.is_empty() {
                 &line[indent..]
             } else {
                 line
             }
         })
         .collect::<Vec<&str>>();
-    content.join("\n").trim().to_owned()
+    content.join("").trim().to_owned()
 }

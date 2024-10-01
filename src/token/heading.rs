@@ -8,13 +8,12 @@ pub struct Heading {
 }
 
 impl Heading {
-    pub const MARK: &str = "#";
+    pub const MARK: &'static str = "#";
 
-    pub fn new(lines: &[&str]) -> Result<Self> {
-        let heading = lines.get(0).unwrap_or(&"");
+    pub fn new(heading: &str) -> Result<Self> {
         Ok(Self {
             prop: Property {
-                val: format!("{heading}\n"),
+                val: heading.to_string(),
             },
         })
     }

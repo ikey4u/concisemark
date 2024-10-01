@@ -7,7 +7,7 @@ pub struct Pair {
 
 impl Pair {
     pub fn new(chars: &[char], boundary: char) -> Option<Self> {
-        if chars.len() <= 0 || chars[0] != boundary {
+        if chars.is_empty() || chars[0] != boundary {
             return None;
         }
 

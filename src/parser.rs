@@ -14,13 +14,7 @@ pub struct Parser {
 impl Parser {
     /// Create a ConciseMarkdown parser from content
     pub fn new<S: AsRef<str>>(content: S) -> Self {
-        let mut content = content.as_ref().to_owned();
-
-        // parser requires the content ends with newline
-        if !content.ends_with('\n') {
-            content.push('\n');
-        }
-
+        let content = content.as_ref().to_owned();
         Parser {
             meta: Meta::new(content.as_str()),
             content,
@@ -61,9 +55,9 @@ impl Parser {
                 Token::Codeblock(codelock) => {
                     self.parse_codeblock(pbase, codelock)
                 }
-                Token::BlankLine => {
+                Token::BlankLine(sz) => {
                     let tag = NodeTag::new(NodeTagName::BlankLine);
-                    Node::new(tag, pbase..(pbase + 1))
+                    Node::new(tag, pbase..(pbase + sz))
                 }
             };
             pbase += node.len();
@@ -179,7 +173,7 @@ impl Parser {
         }
 
         let tag = NodeTag::new(NodeTagName::Text);
-        return Node::new(tag, pbase..(pbase + peeked_text.len()));
+        Node::new(tag, pbase..(pbase + peeked_text.len()))
     }
 
     fn parse_paragraph(&self, pbase: usize, paragaph: Paragraph) -> Node {

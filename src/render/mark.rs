@@ -6,7 +6,7 @@ pub fn generate<S: AsRef<str>>(content: S, typ: RenderType) -> Option<String> {
     if let Some(mark) = Mark::new_from_str(content) {
         match mark.name.as_str() {
             "char" => {
-                if let Some(c) = mark.value.chars().nth(0) {
+                if let Some(c) = mark.value.chars().next() {
                     if typ == RenderType::Html {
                         return Some(utils::escape_to_html(&c.to_string()));
                     } else {
@@ -21,7 +21,7 @@ pub fn generate<S: AsRef<str>>(content: S, typ: RenderType) -> Option<String> {
                 for name in value.split(";") {
                     let name = name.trim();
                     if let Some(emoji) = gh_emoji::get(name) {
-                        emojis.push_str(&emoji.to_string());
+                        emojis.push_str(emoji);
                     } else {
                         emojis.push_str(&format!(" {} ", name));
                     }
@@ -46,7 +46,7 @@ pub fn generate<S: AsRef<str>>(content: S, typ: RenderType) -> Option<String> {
                         }
                     })
                     .collect::<Vec<String>>();
-                return Some(format!(r#"{}"#, value.join("+")));
+                return Some(value.join("+").to_string());
             }
             _ => {
                 return Some(mark.value);

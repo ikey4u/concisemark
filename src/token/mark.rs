@@ -18,7 +18,7 @@ impl Mark {
 
     // format: @<name>[attrs]{value}
     pub fn new(chars: &[char]) -> Option<Mark> {
-        if chars.len() <= 0 || chars[0] != '@' {
+        if chars.is_empty() || chars[0] != '@' {
             return None;
         }
 
@@ -39,7 +39,7 @@ impl Mark {
                     _ => true,
                 }
             })
-            .map(|&c| c)
+            .copied()
             .collect();
         if has_syntax_error {
             return None;
@@ -82,7 +82,7 @@ impl Mark {
             .map(|_c| end_mark_char)
             .collect();
         // no start mark
-        if end_mark.len() <= 0 {
+        if end_mark.is_empty() {
             return None;
         }
 

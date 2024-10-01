@@ -10,7 +10,7 @@ pub struct Link {
 impl Link {
     pub fn new<S: AsRef<str>>(text: S) -> Option<Self> {
         let text = text.as_ref();
-        if text.len() == 0 {
+        if text.is_empty() {
             return None;
         }
 
@@ -29,11 +29,7 @@ impl Link {
             }
         };
 
-        let middle = if let Some(middle) = text.find("](") {
-            middle
-        } else {
-            return None;
-        };
+        let middle = text.find("](")?;
         let end = if let Some(end) = &text[middle..].find(")") {
             middle + end
         } else {
@@ -67,13 +63,13 @@ mod tests {
         let link = link.unwrap();
         assert_eq!(link.namex.as_str(), "google");
         assert_eq!(link.uri, "https://google.com");
-        assert_eq!(link.is_image_link, false);
+        assert!(!link.is_image_link);
 
         let text = "![google](https://google.com)";
         let link = Link::new(text);
         assert!(link.is_some());
         let link = link.unwrap();
-        assert_eq!(link.is_image_link, true);
+        assert!(link.is_image_link);
 
         let text = "[Google Home (google)](https://google.com)";
         let link = Link::new(text);
@@ -81,7 +77,7 @@ mod tests {
         let link = link.unwrap();
         assert_eq!(link.namex.as_str(), "Google Home (google)");
         assert_eq!(link.uri, "https://google.com");
-        assert_eq!(link.is_image_link, false);
+        assert!(!link.is_image_link);
 
         let text = "[Google Home (google)](https://google.com";
         let link = Link::new(text);

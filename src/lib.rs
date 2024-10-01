@@ -133,18 +133,14 @@ impl Page {
     ///     let setup = include_str!("../assets/setup.tex");
     ///     let wanted = indoc! {r#"
     ///         \begin{document}
-    ///
     ///         \begin{figure}[H]
     ///         \centerline{\includegraphics[width=0.7\textwidth]{PLACEHOLDER_ONLINE}}
     ///         \caption{animal-online}
     ///         \end{figure}
-    ///
-    ///
     ///         \begin{figure}[H]
     ///         \centerline{\includegraphics[width=0.7\textwidth]{PLACEHOLDER_OFFLINE}}
     ///         \caption{animal-offlie}
     ///         \end{figure}
-    ///
     ///         \end{document}
     ///     "#};
     ///     let wanted = wanted.replace(
@@ -178,7 +174,7 @@ impl Page {
                 document.append_cmd(&authors);
             }
             let date = render::latex::Cmd::new("date")
-                .with_posarg(&meta.date.to_string());
+                .with_posarg(meta.date.to_string());
             document.append_cmd(&date);
             let maketitle = render::latex::Cmd::new("maketitle");
             document.append_cmd(&maketitle);
@@ -240,7 +236,7 @@ impl Page {
 
 #[cfg(test)]
 mod tests {
-    use std::{env, fs::OpenOptions, io::Write, iter, process::Command};
+    use std::iter;
 
     use html5ever::{
         driver::ParseOpts, local_name, namespace_url, ns, parse_fragment,
@@ -261,30 +257,19 @@ mod tests {
             "input", "keygen", "link", "meta", "param", "source", "track",
             "wbr",
         ];
-        if self_closing_tag_list.iter().any(|&i| i == tag) {
-            true
-        } else {
-            false
-        }
+        self_closing_tag_list.iter().any(|&i| i == tag)
     }
 
     fn get_html_outline(dirty_html: &str) -> String {
         fn walker(indent: usize, node: &Handle) -> String {
-            let indentstr = format!(
-                "{}",
-                iter::repeat(" ").take(indent).collect::<String>()
-            );
-
+            let indentstr = " ".repeat(indent);
             let mut outline = indentstr.to_string();
-            match node.data {
-                NodeData::Element { ref name, .. } => {
-                    if is_self_closing_tag(&name.local) {
-                        outline += &format!("<{}", name.local);
-                    } else {
-                        outline += &format!("<{}>\n", name.local);
-                    }
+            if let NodeData::Element { ref name, .. } = node.data {
+                if is_self_closing_tag(&name.local) {
+                    outline += &format!("<{}", name.local);
+                } else {
+                    outline += &format!("<{}>\n", name.local);
                 }
-                _ => {}
             }
 
             for child in node.children.borrow().iter() {
@@ -295,7 +280,7 @@ mod tests {
 
             if let NodeData::Element { ref name, .. } = node.data {
                 if is_self_closing_tag(&name.local) {
-                    outline += &format!("/>\n");
+                    outline += "/>\n";
                 } else {
                     outline += &format!("{}</{}>\n", indentstr, name.local);
                 }
@@ -383,97 +368,6 @@ mod tests {
     }
 
     #[test]
-    fn test_latex() {
-        let content = indoc! {r#"
-            ![animal-online](https://cn.bing.com/th?id=OHR.NorwayMuskox_EN-CN7806818932_1920x1080.jpg&w=720)
-
-            ![animal-offlie](assets/th.jpg)
-        "#
-        };
-        let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-        let draft_dir = manifest_dir.join("draft");
-        std::fs::create_dir_all(draft_dir.as_path()).unwrap();
-
-        let page = Page::new(content);
-        let hook = |node: &Node| -> Result<(), ()> {
-            let mut nodedata = node.data.borrow_mut();
-            if nodedata.tag.name == NodeTagName::Image {
-                let src = nodedata.tag.attrs.get("src").unwrap().to_owned();
-                let name = nodedata.tag.attrs.get("name").unwrap().to_owned();
-                let output_path;
-                if src.starts_with("https://") || src.starts_with("http://") {
-                    output_path = utils::download_image_fs(
-                        src,
-                        draft_dir.as_path(),
-                        name,
-                    )
-                    .unwrap();
-                } else {
-                    output_path = manifest_dir.join(src);
-                }
-                nodedata.tag.attrs.insert(
-                    "src".to_owned(),
-                    format!("{}", output_path.display()),
-                );
-            }
-            Ok(())
-        };
-        page.transform(hook);
-
-        let setup = include_str!("../assets/setup.tex");
-        let wanted = indoc! {r#"
-            \begin{document}
-
-            \begin{figure}[H]
-            \centerline{\includegraphics[width=0.7\textwidth]{PLACEHOLDER_ONLINE}}
-            \caption{animal-online}
-            \end{figure}
-
-
-            \begin{figure}[H]
-            \centerline{\includegraphics[width=0.7\textwidth]{PLACEHOLDER_OFFLINE}}
-            \caption{animal-offlie}
-            \end{figure}
-
-            \end{document}
-        "#};
-        let wanted = wanted
-            .replace(
-                "PLACEHOLDER_ONLINE",
-                &format!(
-                    "{}",
-                    manifest_dir
-                        .join("draft")
-                        .join("animal-online.jpg")
-                        .display()
-                ),
-            )
-            .replace(
-                "PLACEHOLDER_OFFLINE",
-                &format!(
-                    "{}",
-                    manifest_dir.join("assets").join("th.jpg").display()
-                ),
-            );
-        let pagesrc = &page.render_latex()[setup.len()..];
-        assert_eq!(wanted.trim(), pagesrc.trim());
-
-        let latex = page.render_latex();
-        let texfile = draft_dir.join("output.tex");
-        let mut f = OpenOptions::new()
-            .truncate(true)
-            .write(true)
-            .create(true)
-            .open(&texfile)
-            .unwrap();
-        f.write(latex.as_bytes()).unwrap();
-        let mut cmd = Command::new("xelatex");
-        cmd.current_dir(&draft_dir);
-        cmd.arg(&texfile);
-        _ = cmd.output();
-    }
-
-    #[test]
     fn test_meta() {
         let meta = r#"
 <!---
@@ -514,40 +408,32 @@ example
         let page = Page::new(content);
         let html = page.render();
         assert_eq!(html, include_str!("../testdata/emphasis_01.html").trim());
-        println!("{html}");
+    }
+    #[test]
+    fn test_backquote_00() {
+        let content = include_str!("../testdata/backquote_00.md");
+        let page = Page::new(content);
+        let html = page.render();
+        let wanted_html = "<div><blockquote><p>a simple blockquote with very long body really long body ... </p></blockquote></div>";
+        assert_eq!(html, wanted_html);
     }
 
     #[test]
-    fn test_backquote() {
-        let content = indoc! {r#"
-        > a simple blockquote
-        with very long body
-        really long body ...
-        "#};
-        let page = Page::new(content);
-        let html = page.render();
-        let wanted_html = indoc! {r#"
-        <div><blockquote><p>a simple blockquote with very long body really long body ... </p></blockquote></div>
-        "#}.trim();
-        assert_eq!(html, wanted_html);
-
-        let content = indoc! {r#"
-        > a simple line
-        >
-        > line
-        test
-        "#};
-        let wanted_html = indoc! {r#"
-        <div><blockquote><p>a simple line <br/>line test </p></blockquote></div>
-        "#};
-        let page = Page::new(content);
-        let html = page.render();
-        assert_eq!(html, wanted_html.trim());
-
+    fn test_backquote_01() {
         let content = include_str!("../testdata/backquote_01.md");
         let page = Page::new(content);
         let html = page.render();
-        assert_eq!(html, include_str!("../testdata/backquote_01.html").trim());
+        let wanted_html = "<div><ul><li>title <blockquote><p>a simple line <br/>abc <strong> line </strong> <em> line </em>test </p></blockquote></li></ul></div>";
+        assert_eq!(html, wanted_html);
+    }
+
+    #[test]
+    fn test_backquote_02() {
+        let content = include_str!("../testdata/backquote_02.md");
+        let wanted_html = "<div><blockquote><p>a simple line <br/>line test </p></blockquote></div>";
+        let page = Page::new(content);
+        let html = page.render();
+        assert_eq!(html, wanted_html.trim());
     }
 
     #[test]
@@ -585,29 +471,22 @@ example
     }
 
     #[test]
-    fn test_para_ending_whitesapce() {
-        // 1) require space between `2008 年` and `8 月 8 日`
-        let content = indoc! {r#"
-        北京奥运会开幕式时间为 2008 年
-        8 月 8 日
-        "#};
+    fn test_para_ending_whitesapce_00() {
+        // require space between `2008 年` and `8 月 8 日`
+        let content = include_str!("../testdata/para_ending_whitespace_00.md");
         let wanted_html = indoc! {r#"
         <div><p>北京奥运会开幕式时间为 2008 年 8 月 8 日</p></div>
         "#};
         let page = Page::new(content);
         let html = page.render();
         assert_eq!(html, wanted_html.trim());
+    }
 
-        // 2) require no space between `这是一段长` and `文本`, and
+    #[test]
+    fn test_para_ending_whitesapce_01() {
+        // require no space between `这是一段长` and `文本`, and
         // no space between `这是一段引用` and `文本`
-        let content = indoc! {r#"
-        这是一段长
-        文本
-
-        > 这是一段引用
-        > 文本
-
-        "#};
+        let content = include_str!("../testdata/para_ending_whitespace_01.md");
         let wanted_html = indoc! {r#"
         <div><p>这是一段长文本</p><blockquote><p>这是一段引用文本</p></blockquote></div>
         "#};
@@ -618,15 +497,7 @@ example
 
     #[test]
     fn test_math_mode() {
-        let content = indoc! {r#"
-        - Math Text
-
-            This is inline mode math equation $a^2$, but this is display mode
-
-            $a^2 + b^2$
-
-            blabla ...
-        "#};
+        let content = include_str!("../testdata/math_mode.md");
         let page = Page::new(content);
         let nodes = node::find_nodes_by_tag(&page.ast, node::NodeTagName::Math);
         assert_eq!(nodes.len(), 2);
