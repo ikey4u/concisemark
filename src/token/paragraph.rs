@@ -43,7 +43,7 @@ impl Paragraph {
                 let line_indent = nextline.len() - nextline.trim_start().len();
                 if line_indent == indent {
                     para.push_str(&nextline);
-                    pos += nextline.len();
+                    pos += nextline.chars().count();
                 } else {
                     break;
                 }

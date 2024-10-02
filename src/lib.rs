@@ -504,4 +504,12 @@ example
         assert!(nodes[0].is_inlined(content));
         assert!(!nodes[1].is_inlined(content));
     }
+
+    #[test]
+    fn test_zh_cn_hybrid_in_para() {
+        let content = include_str!("../testdata/zh_cn_hybrid_in_para.md");
+        let page = Page::new(content);
+        let html = page.render();
+        assert_eq!(html, "<div><p>这是 2 根韭菜</p></div>");
+    }
 }
