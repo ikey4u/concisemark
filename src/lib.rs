@@ -539,8 +539,8 @@ example
         let page = Page::new(content);
         let html = page.render();
         assert_eq!(
-        html,
-        include_str!("../testdata/heading_00.html").trim_end()
+            html,
+            include_str!("../testdata/heading_00.html").trim_end()
         );
     }
 }
