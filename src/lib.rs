@@ -532,4 +532,15 @@ example
             include_str!("../testdata/html_char_escape_00.html").trim_end()
         );
     }
+
+    #[test]
+    fn test_heading_00() {
+        let content = include_str!("../testdata/heading_00.md");
+        let page = Page::new(content);
+        let html = page.render();
+        assert_eq!(
+        html,
+        include_str!("../testdata/heading_00.html").trim_end()
+        );
+    }
 }

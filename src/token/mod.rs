@@ -37,7 +37,7 @@ impl Token {
         }
 
         let indentstr = " ".repeat(indent);
-        if peekline.starts_with(&format!("{indentstr}{}", Heading::MARK)) {
+        if peekline.starts_with(Heading::MARK) {
             Ok(Token::Heading(Heading::new(textlines[0])?))
         } else if peekline
             .starts_with(&format!("{indentstr}{}", List::INDENT_MARK))
