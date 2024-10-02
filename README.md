@@ -1,4 +1,4 @@
-# ConciseMark [(documentation)](https://docs.rs/concisemark/0.4.0/concisemark/index.html)
+# ConciseMark [(documentation)](https://docs.rs/concisemark/0.4.1/concisemark/index.html)
 
 ConciseMark is a simplified markdown parsing library written in Rust with customization, math supporting
 in mind. The `simplified` here means it only supports some common markdown syntax but not full.
