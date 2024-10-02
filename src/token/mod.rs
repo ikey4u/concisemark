@@ -31,8 +31,8 @@ impl Token {
     pub fn new(textlines: &[&str], indent: usize) -> Result<Self> {
         ensure!(!textlines.is_empty(), "textlines are empty");
 
-        let peekline = textlines[0].trim();
-        if peekline.is_empty() {
+        let peekline = textlines[0];
+        if peekline.trim().is_empty() {
             return Ok(Self::BlankLine(textlines[0].len()));
         }
 

@@ -115,9 +115,16 @@ pub fn download_image<S: AsRef<str>>(url: S) -> Option<(String, Vec<u8>)> {
 /// split content into lines, find the common indent and remove them
 pub fn remove_indent<S: AsRef<str>>(content: S) -> String {
     let content = content.as_ref();
+    if !content.contains("\n") {
+        return content.trim_start().to_string();
+    }
+
     let mut indent = content.len();
-    for line in content.lines().filter(|line| !line.is_empty()) {
-        let current_indent = line.len() - line.trim().len();
+    for line in content
+        .split_inclusive("\n")
+        .filter(|line| !line.trim().is_empty())
+    {
+        let current_indent = line.len() - line.trim_start().len();
         if current_indent < indent {
             indent = current_indent;
         }
@@ -125,12 +132,12 @@ pub fn remove_indent<S: AsRef<str>>(content: S) -> String {
     let content = content
         .split_inclusive("\n")
         .map(|line| {
-            if !line.is_empty() {
+            if !line.trim().is_empty() {
                 &line[indent..]
             } else {
                 line
             }
         })
         .collect::<Vec<&str>>();
-    content.join("").trim().to_owned()
+    content.join("").to_string()
 }

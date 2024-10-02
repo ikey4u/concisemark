@@ -512,4 +512,12 @@ example
         let html = page.render();
         assert_eq!(html, "<div><p>这是 2 根韭菜</p></div>");
     }
+
+    #[test]
+    fn test_codeblock_00() {
+        let content = include_str!("../testdata/codeblock_00.md");
+        let page = Page::new(content);
+        let html = page.render();
+        assert_eq!(html, include_str!("../testdata/codeblock_00.html").trim_end());
+    }
 }

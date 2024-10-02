@@ -104,7 +104,7 @@ where
             } else {
                 return format!(
                     "<pre><code>{}</pre></code>",
-                    utils::escape_to_html(utils::remove_indent(body).as_str())
+                    utils::escape_to_html(utils::remove_indent(body).trim())
                 );
             }
         }
