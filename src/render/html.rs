@@ -49,7 +49,7 @@ where
                     //     > some text
                     //
                     if line.trim() != ">" {
-                        text.push_str(line[1..].trim());
+                        text.push_str(&utils::escape_to_html(line[1..].trim()));
                     } else {
                         // or else the line contains only a single `>` character such as
                         //
@@ -75,7 +75,7 @@ where
                     {
                         text.push(' ');
                     }
-                    text.push_str(line.trim());
+                    text.push_str(&utils::escape_to_html(line.trim()));
                 }
                 // see test `test_para_ending_whitesapce 2)` and `test_backquote_unicode`
                 if let Some(ch) = line.trim_end().chars().last() {
@@ -122,12 +122,20 @@ where
             if name.is_empty() {
                 name = url.clone();
             }
-            return format!(r#" <a href="{}">{}</a> "#, url, name);
+            return format!(
+                r#" <a href="{}">{}</a> "#,
+                utils::escape_html_double_quote(&url),
+                utils::escape_to_html(&name)
+            );
         }
         NodeTagName::Image => {
             let alt = node.get_attr_or("name", "image link is broken");
             let src = node.get_attr_or("src", "");
-            return format!(r#"<img alt="{alt}" src="{src}"/>"#);
+            return format!(
+                r#"<img alt="{}" src="{}"/>"#,
+                utils::escape_html_double_quote(&alt),
+                utils::escape_html_double_quote(&src),
+            );
         }
         NodeTagName::Emphasis(t) => {
             let tag = match t {

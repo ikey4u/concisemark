@@ -4,6 +4,18 @@ use std::{
     path::{Path, PathBuf},
 };
 
+pub fn escape_html_double_quote(text: &str) -> String {
+    text.chars()
+        .map(|x| {
+            if x == '"' {
+                "&quot;".to_string()
+            } else {
+                x.to_string()
+            }
+        })
+        .collect::<String>()
+}
+
 pub fn escape_to_html(text: &str) -> String {
     let mut html = String::new();
     for ch in text.chars() {

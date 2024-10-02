@@ -236,8 +236,6 @@ impl Page {
 
 #[cfg(test)]
 mod tests {
-    use std::iter;
-
     use html5ever::{
         driver::ParseOpts, local_name, namespace_url, ns, parse_fragment,
         tendril::TendrilSink, tree_builder::TreeSink, QualName,
@@ -518,6 +516,20 @@ example
         let content = include_str!("../testdata/codeblock_00.md");
         let page = Page::new(content);
         let html = page.render();
-        assert_eq!(html, include_str!("../testdata/codeblock_00.html").trim_end());
+        assert_eq!(
+            html,
+            include_str!("../testdata/codeblock_00.html").trim_end()
+        );
+    }
+
+    #[test]
+    fn test_html_char_escape_00() {
+        let content = include_str!("../testdata/html_char_escape_00.md");
+        let page = Page::new(content);
+        let html = page.render();
+        assert_eq!(
+            html,
+            include_str!("../testdata/html_char_escape_00.html").trim_end()
+        );
     }
 }
